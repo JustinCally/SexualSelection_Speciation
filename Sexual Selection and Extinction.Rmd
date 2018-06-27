@@ -27,6 +27,7 @@ library(repmis)
 library(lme4)
 library(ape)
 library(geiger)
+library(gridExtra)
 library(nlme)
 library(phytools)
 library(brms)
@@ -36,6 +37,9 @@ source("bamm_extinction/functions/check_and_fix_ultrametric.R")
 source("functions/essim.R")
 ```
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(cache=TRUE)
+```
 
 Here we provide the supplementary material for our study on sexual selection and extinction risk in passerine birds.
 
@@ -130,10 +134,10 @@ plot.gam(PC2.gam, residuals = T)
 
 ##Long term climate variability (LGM anomaly)
 
-To gain estimates for change in climate over the past 22,000 we can use the difference in annual mean temperature (BIO1) and annual precipitation (BIO12) between the LGM (CCSM4 models) and present values. Additionally we can calculate the difference in variability based on the standard deviation. 
+To gain estimates for change in climate over the past 22,000 we can use the difference in annual mean temperature (BIO1) and annual precipitation (BIO12) between the LGM (CCSM4 models) and present values. Additionally we can calculate the difference in variability based on the standard deviation, although these will be correlated and thus maybe using only one of them (either mean or variability difference) in the analysis may be better. 
 
 
-```{r}
+```{r, fig.width=7, fig.height=3.5}
 #Change in mean temp
 restricted.data$BIO1.LGM.Diff <- restricted.data$bioclim1 - restricted.data$cclgmbi1
 #Change in variation temp
@@ -145,11 +149,15 @@ restricted.data$BIO12.LGM.Diff <- restricted.data$bioclim12 - restricted.data$cc
 restricted.data$BIO12.LGM.var.Diff <- restricted.data$se.bioclim12 - restricted.data$se.cclgmbi12
 
 #Inspect these changes 
-restricted.data %>% ggplot(aes(x=BIO1.LGM.Diff, y = BIO1.LGM.var.Diff))+
-  geom_point()
+bio1.plot <- restricted.data %>% ggplot(aes(x=BIO1.LGM.Diff, y = BIO1.LGM.var.Diff))+
+  geom_point()+
+  theme_minimal()
 
-restricted.data %>% ggplot(aes(x=BIO12.LGM.Diff, y = BIO12.LGM.var.Diff))+
-  geom_point()
+bio12.plot <- restricted.data %>% ggplot(aes(x=BIO12.LGM.Diff, y = BIO12.LGM.var.Diff))+
+  geom_point()+
+  theme_minimal()
+
+grid.arrange(bio1.plot, bio12.plot, ncol=2)
 ```
 
 From these plots we can see that on average temperature has increased but the variation in tempere has decresed (narrowed). Alternatively, precipitation sometimes increases and sometimes decreases. When precipitation increases there isw also an increase in variation in that range. However, when annual precipitation decreases there is a decrease in variation.
@@ -173,7 +181,9 @@ plot(NPP.gam, residuals = T)
 
 _______________
 
-##Preliminary Analysis of data 
+##Preliminary analysis of data 
+
+###Examining BAMM rates 
 
 Now that we have all our relevent predictors we can combine these with the tip extinction rates from BAMM (code for this is provided in the repository). First, let us inspect the tip rates that @Harvey_2017 obtained in BAMM with our predictors. 
 
@@ -181,12 +191,16 @@ Now that we have all our relevent predictors we can combine these with the tip e
 complete.dataframe %>% ggplot(aes(x=rab.ex.rate.lumped, y=rab.ex.rate.split))+
   geom_point()+
   scale_x_log10()+
-  scale_y_log10()
+  scale_y_log10()+
+  theme_minimal()
 ```
 
-The extinction rates of the lumped and split datasets show high similarity, insisting that we could use either. 
+###Fixed-effect models
 
-Let us create a relatively simple model
+The extinction rates of the lumped and split datasets show high similarity and we could arguably use either. Let's ude 'split': 
+
+First with a simple linear model that is not phylogenetically corrected: 
+
 ```{r}
 model.1 <- lm(rab.ex.rate.split ~ SDi 
                 + range.size.m2 
@@ -201,7 +215,8 @@ model.1 <- lm(rab.ex.rate.split ~ SDi
 summary(model.1)
 ```
 
-Now we can try a PGLS model 
+Secondly, we can use a PGLS model: 
+
 ```{r}
 hackett.consensus.tree <- read.nexus('bamm_extinction/data/trees/hackett_dale_sub.consensus.nex')
 restricted.data <- restricted.data %>% drop_na(rab.ex.rate.split)
@@ -222,7 +237,9 @@ pgls.model.1 <- gls(rab.ex.rate.split ~ SDi
 summary(pgls.model.1)
 ```
 
-Or perhaps OU model rather than Brownian: 
+It is likely that given the underestimation of rate shifts by BAMM we obtain groups of similar speciation/extinction rates and thus when used in PGLS the highly correlated species will have near exact extinction/speciation rates. Giving less weight to these results. 
+
+Additionally, we can run a PGLS with an OU model rather than Brownian: 
 
 ```{r}
 pgls.model.3 <- gls(rab.ex.rate.split ~ SDi 
@@ -240,6 +257,7 @@ pgls.model.3 <- gls(rab.ex.rate.split ~ SDi
 summary(pgls.model.3)
 ```
 
+###Bayesian models
 
 Now a Bayesian model that uses a covariance matrix from the phylogeny: 
 
@@ -253,49 +271,50 @@ rownames(A) <- rownames(inv.phylo$Ainv)
 ```
 
 ```{r, eval=FALSE}
-model_bayesian <- brm(
-  rab.ex.rate.split ~ SDi 
-                + range.size.m2 
-                + bioclim4
-                + bioclim15
-                + residuals.PC1
-                + residuals.PC2
-                + BIO1.LGM.Diff
-                + BIO12.LGM.Diff
-                + NPP.res, data = restricted.data, 
-  family = gaussian(), 
-  cov_ranef = list(phylo = A),
-                seed = 1,
-                cores = 4, chains = 4, iter = 4000, #Run 4 chains in parallel for 4000 iterations (2000 are burn in)
-                control = list(adapt_delta = 0.99, max_treedepth = 15))
+# model_bayesian <- brm(
+#   rab.ex.rate.split ~ SDi 
+#                 + range.size.m2 
+#                 + bioclim4
+#                 + bioclim15
+#                 + residuals.PC1
+#                 + residuals.PC2
+#                 + BIO1.LGM.Diff
+#                 + BIO12.LGM.Diff
+#                 + NPP.res, data = restricted.data, 
+#   family = gaussian(), 
+#   cov_ranef = list(phylo = A),
+#                 seed = 1,
+#                 cores = 4, chains = 4, iter = 4000, #Run 4 chains in parallel for 4000 iterations (2000 are burn in)
+#                 control = list(adapt_delta = 0.99, max_treedepth = 15))
 ```
 
 ```{r}
-summary(model_bayesian)
+#summary(model_bayesian)
 ```
 
-Try looking at speciation rate using ES-Sim adapted by @Harvey_essim_2017 and found here https://github.com/mgharvey/ES-sim
+###Diversification rate (DR) estimates as opposed to BAMM
 
-```{r}
+Diversification rates can be simply estimated from thew 'tippiness of the phylogeny'. Here an equal splits (ES) value can be achieved that is weighted to more recent diversification. It was used by @Jetz_2012 and recently (in comparison with BAMM) in a study ivestigation bird diversity alongside elevation [@quintero_2018].WE CAN look at speciation rate using ES-Sim adapted by @Harvey_essim_2017 and found here https://github.com/mgharvey/ES-sim.
+
+```{r, fig.width=8, fig.height = 4}
 Essim.frame <- restricted.data$SDi
 names(Essim.frame) <- restricted.data$TipLabel
 
 essim.results <- essim(pruned.tree, Essim.frame, nsim = 1000, return.es = TRUE)
+#Independent correlation results for ES-sim 
+essim.stats <- cbind(essim.results[["rho"]], essim.results[["P Value"]])
+colnames(essim.stats) <- c("rho", "P value")
+essim.stats %>% pander(digits = 2)
 ```
 
-We can then add the essim.results and run a similar PGLS model
+These results suggest there is not a correlation between the diversification rate (log(ES)) and sexual dichromatism. However. We should look at this in a larger model and with phylogenetic correction. To do that we can obtain the ES values (tip rates) for each species, the log of these is the diversification rate used by @Jetz_2012 and @quintero_2018. 
+ 
 ```{r}
 restricted.data$ESsim <- essim.results[["es"]]
 
-restricted.data %>% ggplot(aes(x=BIO12.LGM.Diff, y = (ESsim))) + 
-  geom_point()+
-  geom_smooth(method = "lm")
-```
- 
- Once we have our EsSim results we can use them in a linear model to assess the relationship between speciation and our predictors
- 
-```{r}
-model.2 <- lm(ESsim ~ SDi 
+#OU model using ES-sim
+
+pgls.model.4 <- gls(ESsim ~ SDi 
                 + range.size.m2 
                 + bioclim4
                 + bioclim15
@@ -304,22 +323,23 @@ model.2 <- lm(ESsim ~ SDi
                 + BIO1.LGM.Diff
                 + BIO12.LGM.Diff
                 + NPP.res,
-                data = restricted.data)
-summary(model.2)
+                correlation = corMartins(1, phy = pruned.tree), 
+                data = restricted.data, 
+                method = "REML")
+summary(pgls.model.4)
 ```
 
-Have a look at how these would look if we obtained model predictions for each data point. 
-
+We can now have a look at how these would look if we obtained model predictions for each data point.
 ```{r, fig.width=10, fig.height=5}
-predict.frame <- cbind(predict(model.2),restricted.data)
-predict.frame %>% ggplot(aes(y = `predict(model.2)`, x = SDi)) + 
+predict.frame <- cbind(predict(pgls.model.4),restricted.data)
+predict.frame %>% ggplot(aes(y = `predict(pgls.model.4)`, x = SDi)) + 
   geom_point(aes(color = BLFamilyLatin))+
   scale_color_hue(h = c(0,100), l = 50) +
   geom_smooth(color = 'black')+
   theme_minimal()
 ```
 
-
+###The sexual dimorphism dataset has an overdispersed distribution
 
 It looks like some of the higher SDi's have slightly higher speciation rates. Perhaps we can look at those obviously dimorphic groups as category of its own. 
 
