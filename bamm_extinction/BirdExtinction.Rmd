@@ -1,0 +1,760 @@
+---
+title: "Bird Extinction"
+output: html_notebook
+---
+
+```{r}
+library(ape)
+library(phytools)
+library(dplyr)
+library(coda)
+library(ggplot2)
+library(ggridges)
+library(phytools)
+library(BAMMtools)
+library(diversitree)
+source("functions/R_test_BAMM_functions.R")
+source("functions/check_and_fix_ultrametric.R")
+# bird.tree.eric <- read.nexus('data/ErisonGeneticFull.nex')
+# averageTree(bird.tree.eric)
+```
+
+Let's read in our consensus trees for Hackett and Ericson backbones for all the Passerines with genetic data:
+```{r}
+consensus.eric <- file.choose()
+  # read.nexus('data/trees/consensus_trees/ericson_dale_sub.consensus.nex')
+consensus.hackett <- read.nexus('data/trees/consensus_trees/hackett_dale_sub.consensus.nex')
+mcc.trees.eric <- read.nexus('data/trees/ericson_dale_sub.nex')
+```
+
+For now, let's use the Ericson tree for speciation/extinction analysis. We want to have a look at the species in the tree and how they match up with the full Dale dataset: 
+
+```{r}
+consensus.eric$tip.label
+```
+
+##BAMM Setup
+
+###Consensus Tree
+
+We need branches to be ultrametric, binary and all edge lengths > 0. We can check that with the following: 
+
+```{r}
+# is.ultrametric(consensus.eric)
+# is.binary.tree(consensus.eric)
+# # Now to check min branch length:
+# min(consensus.eric$edge.length)
+# 
+# #try resolving negative branch lengths
+# 
+# #So in this case we ruin our tree for BAMM. So, instead let us manually change branch lengths to slightly positive values
+# consensus.eric$edge.length[consensus.eric$edge.length<0]<-0
+# 
+# #And now lets see if our tree is hunky dory
+# is.ultrametric(consensus.eric)
+# is.binary.tree(consensus.eric)
+# # Now to check min branch length:
+# min(consensus.eric$edge.length)
+# 
+# #Now it is no longer ultrametric 
+# consensus.eric <- force.ultrametric(consensus.eric, method = "nnls")
+# 
+# #Change non-zero to slight positive
+# consensus.eric$edge.length[consensus.eric$edge.length==0]<-1e-9
+# 
+# #And now once again
+# is.ultrametric(consensus.eric)
+# is.binary.tree(consensus.eric)
+# # Now to check min branch length:
+# min(consensus.eric$edge.length)
+```
+So our minimum branch length is zero... hmmm BAMM says that it should be greater than zero, but chaging this will make the tree no longer ultrametric.
+
+Instead, let's use a previously written function that might handle the consensus tree better
+
+```{r}
+consensus.eric <- read.nexus('data/consensus_trees/ericson_dale_sub.consensus.nex')
+
+is.ultrametric(consensus.eric)
+is.binary.tree(consensus.eric)
+# Now to check min branch length:
+min(consensus.eric$edge.length)
+
+consensus.eric$edge.length[consensus.eric$edge.length<0]<-1e-9
+
+#No longer ultrametric
+consensus.eric <- check_and_fix_ultrametric(consensus.eric)
+
+is.ultrametric(consensus.eric)
+is.binary.tree(consensus.eric)
+# Now to check min branch length:
+min(consensus.eric$edge.length)
+```
+
+
+Create a control file for BAMM analysis. Try and make them as close to Huang and Rabosky 2014 as possible
+
+```{r}
+priors <- setBAMMpriors(consensus.eric, outfile = NULL)
+write.tree(consensus.eric, 'consensus_eric.tre')
+
+# Here is a block of parameters for the control file
+params = list(treefile = 'consensus_eric.tre',
+            sampleFromPriorOnly = 0,
+            runMCMC = 1,
+            initializeModel = 1,
+            useGlobalSamplingProbability = 1,
+            globalSamplingFraction = 0.67,
+            updateLambdaInitScale = 2.0,
+            updateMuInitScale = 2.0,
+            updateLambdaShiftScale = 0.05,
+            updateEventRateScale = 4.0,
+            localGlobalMoveRatio = 10.0,
+            modeltype = 'speciationextinction', #rather than trait
+            
+            mcmcWriteFreq = '100000', #turns to one
+            eventDataWriteFreq = '100000',
+            printFreq = '100000',
+            acceptanceResetFreq = '100000',
+          
+            lambdaInitPrior = as.numeric(priors['lambdaInitPrior']),
+            lambdaShiftPrior = '0.05',
+            muInitPrior = as.numeric(priors['muInitPrior']),
+
+            numberOfGenerations = '150000000', #Command line runs 150 million times
+            runMCMC = 1,
+            overwrite = 1,
+            seed = -1,
+            expectedNumberOfShifts = '24', #Huang and Rabosky had 40 with a full bird tree of 6,670 species. So with 4000 we would expect slightly less
+
+            lambdaIsTimeVariablePrior = '0',
+            updateRateLambdaShift = '1',
+            updateRateEventPosition = '1',
+            numberOfChains = '1',
+            outName = 'consensus.eric')
+
+bammcontrolfile <- paste("control_", "consensus_eric", ".txt", sep="")
+
+# Now writing control parameters to file
+generateControlFile(file = bammcontrolfile, type = "diversification",
+        params = params)
+```
+
+We now run the BAMM through command line. Although the source of BAMM is in another directory we have made a sudo link to it so it can be run from anywhere (e.g. working directory of this project). The command line code is: 
+
+``bamm -c control_consensus_eric.txt``
+
+> cool 
+
+###MCC Tree
+
+```{r}
+is.ultrametric(mcc.trees.eric[["tree_2241"]])
+is.binary.tree(mcc.trees.eric[["tree_2241"]])
+# Now to check min branch length:
+min(mcc.trees.eric[["tree_2241"]]$edge.length)
+```
+
+Create a control file with same parameters as the consensus tree: 
+
+```{r}
+priors <- setBAMMpriors(mcc.trees.eric[["tree_2241"]], outfile = NULL)
+write.tree(mcc.trees.eric[["tree_2241"]], 'mcc_eric_2241.tre')
+
+# Here is a block of parameters for the control file
+params = list(treefile = 'mcc_eric_2241.tre',
+            sampleFromPriorOnly = 0,
+            runMCMC = 1,
+            initializeModel = 1,
+            useGlobalSamplingProbability = 1,
+            globalSamplingFraction = 0.67,
+            updateLambdaInitScale = 2.0,
+            updateMuInitScale = 2.0,
+            updateLambdaShiftScale = 0.05,
+            updateEventRateScale = 4.0,
+            localGlobalMoveRatio = 10.0,
+            modeltype = 'speciationextinction', #rather than trait
+            
+            mcmcWriteFreq = '100000', #turns to one
+            eventDataWriteFreq = '100000',
+            printFreq = '100000',
+            acceptanceResetFreq = '100000',
+          
+            lambdaInitPrior = as.numeric(priors['lambdaInitPrior']),
+            lambdaShiftPrior = '0.05',
+            muInitPrior = as.numeric(priors['muInitPrior']),
+
+            numberOfGenerations = '150000000', #Command line runs 150 million times
+            runMCMC = 1,
+            overwrite = 1,
+            seed = -1,
+            expectedNumberOfShifts = '24', #Huang and Rabosky had 40 with a full bird tree of 6,670 species. So with 4000 we would expect slightly less
+
+            lambdaIsTimeVariablePrior = '0',
+            updateRateLambdaShift = '1',
+            updateRateEventPosition = '1',
+            numberOfChains = '1',
+            outName = 'consensus.eric')
+
+bammcontrolfile <- paste("control_", "mcc_eric_2241", ".txt", sep="")
+
+# Now writing control parameters to file
+generateControlFile(file = bammcontrolfile, type = "diversification",
+        params = params)
+```
+
+
+
+##QUASSE test
+
+
+
+
+
+
+
+
+
+
+
+ 
+##Analysis
+
+Now we have a series of trees and data we can read in:Let's check for convergence
+
+```{r}
+# Read in tree, mcmc data, and BAMM output
+tree.BAMM.eric.bird  <- read.tree("consensus_eric.tre")
+mcmc.BAMM.eric.bird <- read.csv( "consensus.eric_mcmc_out.txt" , stringsAsFactors=F)
+ed.BAMM.eric.bird <- getEventData(tree.BAMM.eric.bird ,  "consensus.eric_event_data.txt", burnin=0.1, nsamples=200)
+```
+
+```{r}
+plot(mcmc.BAMM.eric.bird$logLik ~ mcmc.BAMM.eric.bird$generation)
+```
+
+--> Looks like it has converged so let's discard burn in: 
+
+```{r}
+burnstart <- floor(0.1 * nrow(mcmc.BAMM.eric.bird))
+postburn <- mcmc.BAMM.eric.bird[burnstart:nrow(mcmc.BAMM.eric.bird), ]
+
+#We can also check effective population sizes of the log-likelihhod and number of shift events in each sample
+#We want at least 200 (although that's on the low side)
+
+
+effectiveSize(postburn$N_shifts)
+effectiveSize(postburn$logLik)
+```
+
+
+###How many rate shifts?
+
+Compute the posterior probabilities of models
+```{r}
+post_probs <- table(postburn$N_shifts) / nrow(postburn)
+names(post_probs)
+```
+
+
+And to compute posterior odds ratio for two models: 
+
+```{r}
+post_probs['11'] / post_probs['13']
+```
+
+
+We can obtain bayes factor matrix as such: (The Bf can help us determine the best model, with the overall best model from a BAMM analysis is the model with the highest Bayes factor relative to the null model, M_0.(ususally))
+```{r}
+bfmat <- computeBayesFactors(mcmc.BAMM.eric.bird, expectedNumberOfShifts=24, burnin=0.1)
+```
+This suggests that it is most likely that there are 20 rate shifts as Bf ~ 235
+
+we can plot the prior via:
+
+```{r}
+plotPrior(mcmc.BAMM.eric.bird, expectedNumberOfShifts=24)
+```
+
+
+```{r}
+summary(ed.BAMM.eric.bird)
+```
+
+Plot phylorate plot, good way of visualizing diversification rates
+```{r, fig.width = 6.5, fig.height = 6.5}
+pdf("figures/BAMMplot.pdf", width = 9, height = 9)
+BAMMplot <- plot.bammdata(ed.BAMM.eric.bird, breaksmethod = "jenks", spex="e", method = "polar", lwd=0.5, tau=0.003, logcolor = T)
+mtext("BAMM estimated extinction rates", side=3, cex=1.5)
+addBAMMlegend(BAMMplot, location="bottomright")
+dev.off()
+```
+
+Get histogram of extinction rates
+
+```{r}
+BAMMplot[["colordens"]][["kde.y"]] <- log1p(BAMMplot[["colordens"]][["kde.y"]] )
+pdf("figures/BAMMplot_hist.pdf", width = 8, height = 4)
+#create phylorate plot to generate output
+ratesHistogram(BAMMplot, plotBrks = F, xlab = 'Extinction rate', ylab = 'Frequency (log-transformed)', lwd = 0.05)
+dev.off()
+```
+
+
+##Credible number of shifts
+
+To plot the credible shift set, we need the prior distribution on the number of rate shifts (this is generated internally by BAMMtools). We can then estimate the credible set of rate shifts using the BAMMtools function credibleShiftSet:
+
+```{r}
+css <- credibleShiftSet(ed.BAMM.eric.bird, expectedNumberOfShifts=1, threshold=5, set.limit = 0.95)
+```
+
+Now we obtain the number of distinct shifts: 
+
+```{r}
+css$number.distinct
+```
+
+--> We get a lot more shifts than we expect under a traditional (AIC) approach
+
+```{r}
+summary(css)
+```
+
+```{r}
+plot.credibleshiftset(css)
+```
+
+
+##Hackett Backbone 
+
+Let's make sure our tree is good to go:
+
+```{r}
+is.ultrametric(consensus.hackett)
+is.binary.tree(consensus.hackett)
+# Now to check min branch length:
+min(consensus.hackett$edge.length)
+
+#try resolving negative branch lengths
+
+#So in this case we ruin our tree for BAMM. So, instead let us manually change branch lengths to slightly positive values
+consensus.hackett$edge.length[consensus.hackett$edge.length<0]<-0
+
+#And now lets see if our tree is hunky dory
+is.ultrametric(consensus.hackett)
+is.binary.tree(consensus.hackett)
+# Now to check min branch length:
+min(consensus.hackett$edge.length)
+
+#Now it is no longer ultrametric 
+consensus.hackett <- force.ultrametric(consensus.hackett, method = "nnls")
+
+#Change non-zero to slight positive
+consensus.hackett$edge.length[consensus.hackett$edge.length==0]<-1e-9
+
+#And now once again
+is.ultrametric(consensus.hackett)
+is.binary.tree(consensus.hackett)
+# Now to check min branch length:
+min(consensus.hackett$edge.length)
+```
+So our minimum branch length is zero... hmmm BAMM says that it should be greater than zero, but chaging this will make the tree no longer ultrametric.
+
+#Let's move forward and create a control file for the 
+
+Create a control file for BAMM analysis. Try and make them as close to Huang and Rabosky 2014 as possible
+
+```{r}
+priors <- setBAMMpriors(consensus.hackett, outfile = NULL)
+write.tree(consensus.hackett, 'consensus_hackett.tre')
+
+# Here is a block of parameters for the control file
+params = list(treefile = 'consensus_hackett.tre',
+            sampleFromPriorOnly = 0,
+            runMCMC = 1,
+            initializeModel = 1,
+            useGlobalSamplingProbability = 1,
+            globalSamplingFraction = 0.67,
+            updateLambdaInitScale = 2.0,
+            updateMuInitScale = 2.0,
+            updateLambdaShiftScale = 0.05,
+            updateEventRateScale = 4.0,
+            localGlobalMoveRatio = 10.0,
+            modeltype = 'speciationextinction', #rather than trait
+            
+            lambdaInitPrior = as.numeric(priors['lambdaInitPrior']),
+            lambdaShiftPrior = '0.05',
+            muInitPrior = as.numeric(priors['muInitPrior']),
+
+            numberOfGenerations = '100000000', #Command line runs 100 million times
+            runMCMC = 1,
+            overwrite = '0',
+            seed = -1,
+            expectedNumberOfShifts = '24', #Huang and Rabosky had 40 with a full bird tree of 6,670 species. So with 4000 we would expect slightly less
+
+            lambdaIsTimeVariablePrior = '0',
+            updateRateLambdaShift = '1',
+            updateRateEventPosition = '1',
+            numberOfChains = '1',
+            outName = 'consensus.hackett')
+
+bammcontrolfile <- paste("control_", "consensus_hackett", ".txt", sep="")
+
+# Now writing control parameters to file
+generateControlFile(file = bammcontrolfile, type = "diversification",
+        params = params)
+```
+
+``bamm -c control_consensus_hackett.txt``
+
+> Cool, now let's run the same checks on it as the
+
+```{r}
+# Read in tree, mcmc data, and BAMM output
+tree.BAMM.hackett.bird  <- read.tree("hackett_files/consensus_hackett.tre")
+mcmc.BAMM.hackett.bird   <- read.csv( "hackett_files/consensus.hackett_mcmc_out.txt" , stringsAsFactors=F)
+ed.BAMM.hackett.bird     <- getEventData(tree.BAMM.hackett.bird ,  "hackett_files/consensus.hackett_event_data.txt", burnin=0.1, nsamples=200)
+```
+
+Let's check for convergence
+```{r}
+plot(mcmc.BAMM.hackett.bird$logLik ~ mcmc.BAMM.hackett.bird$generation)
+```
+
+
+--> Looks like it has converged so let's discard burn in: 
+
+```{r}
+hackett_burnstart <- floor(0.1 * nrow(mcmc.BAMM.hackett.bird))
+hackett_postburn <- mcmc.BAMM.hackett.bird[burnstart:nrow(mcmc.BAMM.hackett.bird), ]
+
+#We can also check effective population sizes of the log-likelihhod and number of shift events in each sample
+#We want at least 200 (although that's on the low side)
+
+effectiveSize(hackett_postburn$N_shifts)
+effectiveSize(hackett_postburn$logLik)
+```
+
+```{r}
+hackett_bfmat <- computeBayesFactors(mcmc.BAMM.hackett.bird, expectedNumberOfShifts=24, burnin=0.1)
+```
+
+```{r}
+plotPrior(mcmc.BAMM.hackett.bird, expectedNumberOfShifts=24)
+```
+
+```{r}
+summary(ed.BAMM.hackett.bird)
+```
+
+Plot phylorate plot, good way of visualizing diversification rates
+```{r, fig.width = 7, fig.height = 7}
+BAMMplot_hackett <- plot.bammdata(ed.BAMM.hackett.bird, breaksmethod = "jenks", spex="e", method = "polar", lwd=2, tau=0.003)
+mtext("BAMM estimated rates", side=3, cex=1.5)
+addBAMMlegend(BAMMplot_hackett, location="left")
+```
+
+##Tip Extinction Rates
+
+We can get tip extinction rates to use in our dataset. 
+
+```{r}
+hackett.extinction.frame <-data.frame(ed.BAMM.hackett.bird$tip.label, ed.BAMM.hackett.bird$meanTipMu)
+
+colnames(hackett.extinction.frame) <- c("binomial", "extinction.rate.hackett")
+hackett.extinction.frame$binomial <- gsub("_", " ", hackett.extinction.frame$binomial)
+```
+
+Now for Ericson rates
+```{r}
+ericson.extinction.frame <-data.frame(ed.BAMM.eric.bird$tip.label, ed.BAMM.eric.bird$meanTipMu)
+
+colnames(ericson.extinction.frame) <- c("binomial", "extinction.rate.ericson")
+ericson.extinction.frame$binomial <- gsub("_", " ", ericson.extinction.frame$binomial)
+```
+
+
+Ok we have our extinction data now let's merge SS data
+
+```{r}
+colnames(dale.data)[1] <- "binomial"
+prelim.dataframe <- left_join(hackett.extinction.frame, ericson.extinction.frame, by = "binomial")
+prelim.dataframe <- left_join(prelim.dataframe, dale.data, by = "binomial")
+
+
+#New col of male plumage vs female plumage
+
+prelim.dataframe$SDi <- prelim.dataframe$Male_plumage_score/prelim.dataframe$Female_plumage_score
+```
+
+Get a ggplot
+```{r}
+prelim.dataframe %>% ggplot(aes(x = (SDi), y = log(extinction.rate)))+
+  geom_point()+
+  geom_smooth()
+```
+
+Let's have a look at range size
+
+```{r}
+range.size <- read.csv('data/environmental/bird.range.size.csv')
+
+prelim.dataframe <- left_join(prelim.dataframe, range.size)
+```
+
+```{r}
+prelim.dataframe %>% ggplot(aes(y = range.size.m2, x = SDi))+
+geom_point(aes(color = extinction.rate))+
+  scale_color_gradient()
+```
+
+```{r}
+summary(lm(extinction.rate ~ SDi, data = prelim.dataframe))
+```
+
+Let's add all the dataframes together
+```{r}
+#Bioclim.means
+bioclim.means <- read.csv('data/environmental/bird.means.csv')
+prelim.dataframe <- left_join(prelim.dataframe, bioclim.means)
+
+#Bioclim.se
+bioclim.se <- read.csv('data/environmental/bird.se.csv')
+prelim.dataframe <- left_join(prelim.dataframe, bioclim.se, by = 'binomial')
+
+#LGM means
+LGM.means <- read.csv('data/environmental/LGM.bird.means.csv')
+prelim.dataframe <- left_join(prelim.dataframe, LGM.means, by = 'binomial')
+
+#LGM se
+LGM.se <- read.csv('data/environmental/LGM.bird.se.csv')
+prelim.dataframe <- left_join(prelim.dataframe, LGM.se, by = 'binomial')
+
+#NPP means
+NPP.means <- read.csv('data/environmental/NPP.bird.means.csv')
+prelim.dataframe <- left_join(prelim.dataframe, NPP.means, by = 'binomial')
+
+#NPP se
+NPP.se <- read.csv('data/environmental/NPP.bird.se.csv')
+prelim.dataframe <- left_join(prelim.dataframe, NPP.se, by = 'binomial')
+
+#Pop Density means
+Pop.density.means <- read.csv('data/environmental/Pop.density.means.csv')
+prelim.dataframe <- left_join(prelim.dataframe, Pop.density.means, by = 'binomial')
+
+#Pop density se
+Pop.density.se <- read.csv('data/environmental/Pop.density.se.csv')
+prelim.dataframe <- left_join(prelim.dataframe, Pop.density.se, by = 'binomial')
+
+#IUCN rankings and Passerines from Jetz/birdtree master
+IUCN.family <- read.csv('data/IUCN_Family.csv')
+prelim.dataframe <- left_join(prelim.dataframe, IUCN.family, by = 'binomial')
+
+write.csv(prelim.dataframe, 'data/complete.dataframe.csv')
+```
+
+Let's have a look at the extinction rate of Hackett vs Ericson 
+
+```{r}
+prelim.dataframe %>% ggplot(aes(x = (extinction.rate.ericson), y = (extinction.rate.hackett)))+
+  geom_point()+
+  scale_x_log10()+
+  scale_y_log10()+
+  geom_smooth(method = "lm")
+```
+
+```{r}
+summary(lm(extinction.rate.hackett ~ extinction.rate.ericson, data = prelim.dataframe))
+```
+
+How does IUCN rankings correlate with BAMM extinction rate
+
+```{r}
+prelim.dataframe %>% ggplot(aes(x = X2010.IUCN.Red.List.category, y = extinction.rate.hackett)) +
+  geom_jitter()+
+  geom_boxplot()+
+  scale_y_log10()
+```
+
+--> Not really much correlation
+
+How about IUCN and pop density
+
+```{r}
+prelim.dataframe %>% ggplot(aes(y = X2010.IUCN.Red.List.category, x = (Pop_Density))) +
+  geom_density_ridges()
+```
+
+Let's try ES-Sim with our phylogeny and our traits
+
+```{r}
+#Try with the consensus eric tree and the SDi
+
+source('ES-sim/R/essim.R')
+essim(consensus.eric, prelim.dataframe, nsim = 1000)
+
+```
+
+Phylogenetic models can be fitted with brms: https://rdrr.io/cran/brms/f/vignettes/brms_phylogenetics.Rmd
+
+```{r}
+prelim.dataframe %>% ggplot(aes(y = log(extinction.rate.hackett), x = Sexual_selection_ppca))+
+  geom_point()
+```
+
+```{r}
+prelim.dataframe %>% ggplot(aes(x=SDi, y = PassNonPass))+
+  geom_density_ridges()
+```
+
+
+Test paired t test 
+
+```{r}
+x = c(1,4,5,3,7,7,8)
+y = c(13,14,20,15,20,22,25)
+t.test.test <- pairedSamplesTTest(~ x + y)
+```
+
+
+
+```{r}
+load("hackett_files/Hackett_lumped_eventsample.rda")
+rabosky.ext <- data.frame(ed[["tip.label"]], ed[["meanTipMu"]])
+colnames(rabosky.ext) <- c("binomial", "rab.ext.rate")
+rabosky.ext$binomial <- gsub("_", " ", rabosky.ext$binomial)
+comparison.ext.rate <- right_join(rabosky.ext, hackett.extinction.frame, by = "binomial")
+
+comparison.ext.rate %>% ggplot(aes(x=rab.ext.rate, y=extinction.rate.hackett))+
+  geom_point()+
+  scale_x_log10()+
+  scale_y_log10()
+```
+
+```{r}
+summary(lm(extinction.rate.hackett ~ rab.ext.rate, data = comparison.ext.rate))
+```
+
+###PCA 
+
+```{r}
+restricted.data <- prelim.dataframe %>% drop_na(bioclim1)
+PCA.bioclim <- prcomp(restricted.data[c(34,35,36,38:47,49:52)], scale = TRUE, center = TRUE)
+PCA.predictions <- predict(PCA.bioclim)
+restricted.data <- cbind(restricted.data, PCA.predictions)
+```
+
+```{r}
+#PC1 is correlated with range size, looks exponential
+restricted.data %>% ggplot(aes(x=range.size.m2, y = PC1))+
+  geom_point()+
+  scale_x_log10()+
+  geom_smooth(method = 'auto')
+
+#PC2 seems less correlated with range size
+restricted.data %>% ggplot(aes( y = se.bioclim12, x=bioclim12))+
+  geom_point()
+```
+
+```{r}
+PC1.gam <- mgcv::gam(PC1 ~ s(log(range.size.m2)), data = restricted.data, family = "gaussian")
+plot.gam(PC1.gam, residuals = T)
+```
+
+This essentially gives me the same sort of thing as ggplot, although I am not too sure if log(range size) is appropriate. 
+
+We can then take residuals using: 
+
+```{r}
+restricted.data$residuals.PC1 <- residuals.gam(PC1.gam)
+```
+
+We can do the same for PC2 (precipitation)
+
+```{r}
+PC2.gam <- mgcv::gam(PC2 ~ s(log(range.size.m2)), data = restricted.data, family = "gaussian")
+plot.gam(PC2.gam, residuals = T)
+```
+
+We can then take residuals using: 
+
+```{r}
+restricted.data$residuals.PC2 <- residuals.gam(PC2.gam)
+```
+
+```{r}
+restricted.data %>% ggplot(aes(x=residuals.PC1, y=residuals.PC2))+
+  geom_point()
+```
+
+###Now get LGM Difference for mean and SE
+
+```{r}
+#Change in mean temp
+restricted.data$BIO1.LGM.Diff <- restricted.data$bioclim1 - restricted.data$cclgmbi1
+#Change in variation temp
+restricted.data$BIO1.LGM.var.Diff <- restricted.data$se.bioclim1 - restricted.data$se.cclgmbi1
+
+#Change in mean precipitation
+restricted.data$BIO12.LGM.Diff <- restricted.data$bioclim12 - restricted.data$cclgmbi12
+#Change in variation precipitation
+restricted.data$BIO12.LGM.var.Diff <- restricted.data$se.bioclim12 - restricted.data$se.cclgmbi12
+
+#Inspect these changes 
+restricted.data %>% ggplot(aes(x=BIO1.LGM.Diff, y = BIO1.LGM.var.Diff))+
+  geom_point()
+
+restricted.data %>% ggplot(aes(x=BIO12.LGM.Diff, y = BIO12.LGM.var.Diff))+
+  geom_point()
+```
+
+
+
+
+```{r}
+css <- credibleShiftSet(ed, expectedNumberOfShifts=1, threshold=5, set.limit = 0.95)
+summary(css)
+css$number.distinct
+plot.credibleshiftset(css)
+```
+
+
+```{r}
+css2 <- credibleShiftSet(ed.BAMM.hackett.bird, expectedNumberOfShifts=1, threshold=5, set.limit = 0.95)
+summary(css2)
+css2$number.distinct
+plot.credibleshiftset(css2)
+```
+
+```{r}
+rabosky.spc <- data.frame(ed[["tip.label"]], ed[["meanTipLambda"]])
+colnames(rabosky.spc) <- c("binomial", "rab.spc.rate")
+my.spc <- data.frame(ed.BAMM.hackett.bird[["tip.label"]], ed.BAMM.hackett.bird[["meanTipLambda"]])
+colnames(my.spc) <- c("binomial", "my.spc.rate")
+comparison.spc.rate <- right_join(rabosky.spc, my.spc, by = "binomial")
+
+comparison.spc.rate %>% ggplot(aes(x=rab.spc.rate, y=my.spc.rate))+
+  geom_point()+
+  scale_x_log10()+
+  scale_y_log10()
+```
+
+
+###Armenta Data Vs Dale
+
+```{r}
+Armenta.dat <- read.csv('data/Armenta_2008.csv')
+prelim.dataframe <- left_join(prelim.dataframe, Armenta.dat, by = 'binomial')
+prelim.dataframe$Colour.discriminability <- as.numeric(prelim.dataframe$Colour.discriminability)
+
+prelim.dataframe %>% ggplot(aes(x=Colour.discriminability, y = SDi))+
+  geom_point()+
+  geom_smooth(method = "lm")
+```
+
+```{r}
+summary(lm(Colour.discriminability ~ SDi, data = prelim.dataframe))
+```
+
+

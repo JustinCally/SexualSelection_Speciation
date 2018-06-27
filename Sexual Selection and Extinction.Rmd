@@ -1,0 +1,331 @@
+---
+title: 'Sexual selection and extinction: a macro-evolutionary approach'
+author: "Justin G. Cally^1^, Iliana Medina Guzmán^1^ Luke Holman^1^, Devi Stuart-Fox^1^ <br></br> <br></br> ^1^The University of Melbourne"
+subtitle: Supplementary Material
+bibliography: References/SS_Extinction.bib
+csl: References/Proc_b.csl
+output:
+  html_document:
+    toc: true # table of content true
+    toc_float: true # make 
+    depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: false  ## if you want number sections at each table header
+    theme: cosmo
+    code_folding: hide # awesome buttons to show/hide the code
+  pdf_document: default
+---
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+library(dplyr)
+library(ggplot2)
+library(pander)
+library(knitr)
+library(tidyr)
+library(mgcv)
+library(diversitree)
+library(repmis)
+library(lme4)
+library(ape)
+library(geiger)
+library(nlme)
+library(phytools)
+library(brms)
+library(ggridges)
+library(caper)
+source("bamm_extinction/functions/check_and_fix_ultrametric.R")
+source("functions/essim.R")
+```
+
+
+Here we provide the supplementary material for our study on sexual selection and extinction risk in passerine birds.
+
+#Compiling the data
+
+For this project we aimed to compile data on a large set of species in the Passerine bird order that would allow us to account for many evolutionary and environmental predictors of extinction. The following details the source and use of the data.
+
+##Extinction Risk
+
+To obtain extinction risk estimates we used Bayesian Analysis of Macroevolutionary Mixtures (BAMM). We document the control file and process for obtaining extinction rates from BAMM in an accompanying R markdown in the ``BAMM`` folder. Additionally, we compared our BAMM output files (event data) against a pre-existing extinction rate dataset [@Harvey_2017].
+
+Rather than obtaining one estimate of extinction rate, we ran BAMM XXXX times to obtain uncertainty estimates of the extinction risk generated from the phylogeny created by @Jetz_2012. 
+
+@Jetz_2012 also provides us with a compiled IUCN threat level listing for all species from 2010 standings.
+
+##Sexual Selection
+
+Our proxy for sexual selection was based on measures of sexual dichromatism. Notably, we use two existing datasets; a complete set of male and female plumage scores in Passerines from @Dale_2015 and reflectance data from 1000 birds from @Armenta_2008.
+
+Briefly, @Dale_2015 obtained male and female plumage score, which can be divided to obtain a sexual dimorphism index (SDi). The plumage score was scored using the _Handbook of the Birds of the World_ @delhoyo2011. By scanning images of males and females in this book across multiple patches @Dale_2015 were able to obtain mean plumage scores from RGB values. Notably concern about the accuracy of these measurements were raised, thus this dataset was previously compared with a more thorough reflectance dataset of Australian birds, the two datasets correlated but was expectedly noisy (R2 = 0.67, P < 0.0001). Here we compare the @Dale_2015 data against another reflectance dataset from @Armenta_2008 which has colour discriminability, segment classification and PCA. 
+
+Alongside sexual dichromatism data there is also partial data for other metrics analysed in @Dale_2015 such as: Body size, tropical life history, Sexual selection, Cooperative breeding and Migration. 
+
+##Environmental predictors 
+
+We obtained species range distribution maps from Birdlife International (through IUCN). These species range maps cover ~ 7,000 species of birds. From these ranges we were able to obtain estimates of: 
+
+* Range Size
+* Average and standard deviation in 19 bioclimatic variables (each range randomly sampled 1000 times)
+* Average and standard deviation in 19 bioclimatic variables from the last glaciam maximum (LGM)
+* Net primary productivity (NPP) estimates and variability
+* Average and standard deviation of population density in the species ranges. 
+
+The code for extracting the environmental data from the species is provided in another document XXXX.
+
+#Generating biologically relevent predictors of extinction
+
+Here we assess the relationship between sexual selection and extinction risk. However, in doing so we attempt to take into account as many other predictors of extinction as possible, primarily through environmental variables. Basically, our model structure seeks to contain: 
+
+
+Extinction rate ~ Sexual selection
+                   + Range size
+                   + Short temporal variability of temperature (mean BIOCLIM4)
+                   + Short temporal variability of precipitation (mean BIOCLIM15)
+                   + Spatial variability of temperature (PCA1)
+                   + Spatial variability of precipitation (PCA2)
+                   + Long-term variability of temperature (BIOCLIM1)
+                   + Long-term variability of precipitation (BIOCLIM12)
+                   + Variability of NPP
+
+These predictors can be generated from the compiled datasets seen here: 
+
+```{r}
+complete.dataframe <- read.csv('data/complete.dataframe.csv')
+```
+
+
+##Spatial Variability PCAs
+
+To obtain estimates of spatial variability we can obtain PCAs of the standard errors of the bioclimatic variables (excluding seasonality in temperature and precipitation). From there we can run GAM models with the PCA components and range size and extract residuals. We do this as we expect variability will increase alongside increased range size, thus taking the residuals allows us to correct for this association.
+
+
+```{r}
+restricted.data <- complete.dataframe %>% drop_na(bioclim1) #Drop species without environmental data
+PCA.bioclim <- prcomp(restricted.data[c(34,35,36,38:47,49:52)], #Select se.bioclim
+                      scale = TRUE, center = TRUE)
+PCA.predictions <- predict(PCA.bioclim)
+restricted.data <- cbind(restricted.data, PCA.predictions)
+
+#run GAM
+PC1.gam <- mgcv::gam(PC1 ~ s(log(range.size.m2)), data = restricted.data, family = "gaussian")
+
+#take residuals
+restricted.data$residuals.PC1 <- residuals.gam(PC1.gam)
+
+#plot
+plot.gam(PC1.gam, residuals = T)
+```
+
+
+We can do the same for PC2 (precipitation)
+
+```{r}
+PC2.gam <- mgcv::gam(PC2 ~ s(log(range.size.m2)), data = restricted.data, family = "gaussian")
+
+#Take residuals
+restricted.data$residuals.PC2 <- residuals.gam(PC2.gam)
+
+plot.gam(PC2.gam, residuals = T)
+```
+
+
+##Long term climate variability (LGM anomaly)
+
+To gain estimates for change in climate over the past 22,000 we can use the difference in annual mean temperature (BIO1) and annual precipitation (BIO12) between the LGM (CCSM4 models) and present values. Additionally we can calculate the difference in variability based on the standard deviation. 
+
+
+```{r}
+#Change in mean temp
+restricted.data$BIO1.LGM.Diff <- restricted.data$bioclim1 - restricted.data$cclgmbi1
+#Change in variation temp
+restricted.data$BIO1.LGM.var.Diff <- restricted.data$se.bioclim1 - restricted.data$se.cclgmbi1
+
+#Change in mean precipitation
+restricted.data$BIO12.LGM.Diff <- restricted.data$bioclim12 - restricted.data$cclgmbi12
+#Change in variation precipitation
+restricted.data$BIO12.LGM.var.Diff <- restricted.data$se.bioclim12 - restricted.data$se.cclgmbi12
+
+#Inspect these changes 
+restricted.data %>% ggplot(aes(x=BIO1.LGM.Diff, y = BIO1.LGM.var.Diff))+
+  geom_point()
+
+restricted.data %>% ggplot(aes(x=BIO12.LGM.Diff, y = BIO12.LGM.var.Diff))+
+  geom_point()
+```
+
+From these plots we can see that on average temperature has increased but the variation in tempere has decresed (narrowed). Alternatively, precipitation sometimes increases and sometimes decreases. When precipitation increases there isw also an increase in variation in that range. However, when annual precipitation decreases there is a decrease in variation.
+
+
+##Variation in NPP
+
+Similar to the PCA's we expect NPP variation to be correlated with range size. To account for this we can run a GAM and obtain residuals. 
+
+```{r}
+#run gam
+NPP.gam <- mgcv::gam(NPP.se ~ s(log(range.size.m2)), data = restricted.data, family = "gaussian")
+
+#obtain residuals
+restricted.data$NPP.res <- residuals.gam(NPP.gam)
+
+#plot
+plot(NPP.gam, residuals = T)
+```
+
+
+_______________
+
+##Preliminary Analysis of data 
+
+Now that we have all our relevent predictors we can combine these with the tip extinction rates from BAMM (code for this is provided in the repository). First, let us inspect the tip rates that @Harvey_2017 obtained in BAMM with our predictors. 
+
+```{r}
+complete.dataframe %>% ggplot(aes(x=rab.ex.rate.lumped, y=rab.ex.rate.split))+
+  geom_point()+
+  scale_x_log10()+
+  scale_y_log10()
+```
+
+The extinction rates of the lumped and split datasets show high similarity, insisting that we could use either. 
+
+Let us create a relatively simple model
+```{r}
+model.1 <- lm(rab.ex.rate.split ~ SDi 
+                + range.size.m2 
+                + bioclim4
+                + bioclim15
+                + residuals.PC1
+                + residuals.PC2
+                + BIO1.LGM.Diff
+                + BIO12.LGM.Diff
+                + NPP.res,
+                data = restricted.data)
+summary(model.1)
+```
+
+Now we can try a PGLS model 
+```{r}
+hackett.consensus.tree <- read.nexus('bamm_extinction/data/trees/hackett_dale_sub.consensus.nex')
+restricted.data <- restricted.data %>% drop_na(rab.ex.rate.split)
+rownames(restricted.data) <- restricted.data$TipLabel
+pruned.tree<-drop.tip(hackett.consensus.tree,hackett.consensus.tree$tip.label[-match(restricted.data$TipLabel, hackett.consensus.tree$tip.label)])
+pgls.model.1 <- gls(rab.ex.rate.split ~ SDi 
+                + range.size.m2 
+                + bioclim4
+                + bioclim15
+                + residuals.PC1
+                + residuals.PC2
+                + BIO1.LGM.Diff
+                + BIO12.LGM.Diff
+                + NPP.res,
+                correlation = corBrownian(phy = pruned.tree), 
+                data = restricted.data, 
+                method = "REML")
+summary(pgls.model.1)
+```
+
+Or perhaps OU model rather than Brownian: 
+
+```{r}
+pgls.model.3 <- gls(rab.ex.rate.split ~ SDi 
+                + range.size.m2 
+                + bioclim4
+                + bioclim15
+                + residuals.PC1
+                + residuals.PC2
+                + BIO1.LGM.Diff
+                + BIO12.LGM.Diff
+                + NPP.res,
+                correlation = corMartins(1, phy = pruned.tree), 
+                data = restricted.data, 
+                method = "REML")
+summary(pgls.model.3)
+```
+
+
+Now a Bayesian model that uses a covariance matrix from the phylogeny: 
+
+```{r}
+pruned.tree$edge.length[pruned.tree$edge.length<0]<-1e-9
+pruned.tree$edge.length[pruned.tree$edge.length==0]<-1e-9
+pruned.tree <- check_and_fix_ultrametric(pruned.tree)
+inv.phylo <- MCMCglmm::inverseA(pruned.tree, nodes = "TIPS", scale = TRUE)
+A <- solve(inv.phylo$Ainv)
+rownames(A) <- rownames(inv.phylo$Ainv)
+```
+
+```{r, eval=FALSE}
+model_bayesian <- brm(
+  rab.ex.rate.split ~ SDi 
+                + range.size.m2 
+                + bioclim4
+                + bioclim15
+                + residuals.PC1
+                + residuals.PC2
+                + BIO1.LGM.Diff
+                + BIO12.LGM.Diff
+                + NPP.res, data = restricted.data, 
+  family = gaussian(), 
+  cov_ranef = list(phylo = A),
+                seed = 1,
+                cores = 4, chains = 4, iter = 4000, #Run 4 chains in parallel for 4000 iterations (2000 are burn in)
+                control = list(adapt_delta = 0.99, max_treedepth = 15))
+```
+
+```{r}
+summary(model_bayesian)
+```
+
+Try looking at speciation rate using ES-Sim adapted by @Harvey_essim_2017 and found here https://github.com/mgharvey/ES-sim
+
+```{r}
+Essim.frame <- restricted.data$SDi
+names(Essim.frame) <- restricted.data$TipLabel
+
+essim.results <- essim(pruned.tree, Essim.frame, nsim = 1000, return.es = TRUE)
+```
+
+We can then add the essim.results and run a similar PGLS model
+```{r}
+restricted.data$ESsim <- essim.results[["es"]]
+
+restricted.data %>% ggplot(aes(x=BIO12.LGM.Diff, y = (ESsim))) + 
+  geom_point()+
+  geom_smooth(method = "lm")
+```
+ 
+ Once we have our EsSim results we can use them in a linear model to assess the relationship between speciation and our predictors
+ 
+```{r}
+model.2 <- lm(ESsim ~ SDi 
+                + range.size.m2 
+                + bioclim4
+                + bioclim15
+                + residuals.PC1
+                + residuals.PC2
+                + BIO1.LGM.Diff
+                + BIO12.LGM.Diff
+                + NPP.res,
+                data = restricted.data)
+summary(model.2)
+```
+
+Have a look at how these would look if we obtained model predictions for each data point. 
+
+```{r, fig.width=10, fig.height=5}
+predict.frame <- cbind(predict(model.2),restricted.data)
+predict.frame %>% ggplot(aes(y = `predict(model.2)`, x = SDi)) + 
+  geom_point(aes(color = BLFamilyLatin))+
+  scale_color_hue(h = c(0,100), l = 50) +
+  geom_smooth(color = 'black')+
+  theme_minimal()
+```
+
+
+
+It looks like some of the higher SDi's have slightly higher speciation rates. Perhaps we can look at those obviously dimorphic groups as category of its own. 
+
+```{r}
+restricted.data %>% ggplot(aes(SDi))+
+  geom_histogram(binwidth = 0.015)+
+  theme_minimal()
+```
+
