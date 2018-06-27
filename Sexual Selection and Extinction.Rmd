@@ -237,7 +237,7 @@ pgls.model.1 <- gls(rab.ex.rate.split ~ SDi
 summary(pgls.model.1)
 ```
 
-It is likely that given the underestimation of rate shifts by BAMM we obtain groups of similar speciation/extinction rates and thus when used in PGLS the highly correlated species will have near exact extinction/speciation rates. Giving less weight to these results. 
+> My gut feeling: It is likely that given the underestimation of rate shifts by BAMM we obtain groups of similar speciation/extinction rates and thus when used in PGLS the highly correlated species will have near exact extinction/speciation rates. Giving less weight to these results. 
 
 Additionally, we can run a PGLS with an OU model rather than Brownian: 
 
