@@ -3,7 +3,9 @@ title: "Bird Extinction"
 output: html_notebook
 ---
 
-```{r}
+#Setup
+
+```{r, warning = FALSE}
 library(ape)
 library(phytools)
 library(dplyr)
@@ -27,41 +29,41 @@ consensus.hackett <- read.nexus('data/trees/consensus_trees/hackett_dale_sub.con
 mcc.trees.eric <- read.nexus('data/trees/ericson_dale_sub.nex')
 ```
 
-For now, let's use the Ericson tree for speciation/extinction analysis. We want to have a look at the species in the tree and how they match up with the full Dale dataset: 
+For now, let's use the Ericson tree for speciation/extinction analysis. We want to have a look at the species in the tree and how they match up with the full Dale dataset:
 
 ```{r}
 consensus.eric$tip.label
 ```
 
-##BAMM Setup
+
 
 ###Consensus Tree
 
-We need branches to be ultrametric, binary and all edge lengths > 0. We can check that with the following: 
+We need branches to be ultrametric, binary and all edge lengths > 0. We can check that with the following:
 
 ```{r}
 # is.ultrametric(consensus.eric)
 # is.binary.tree(consensus.eric)
 # # Now to check min branch length:
 # min(consensus.eric$edge.length)
-# 
+#
 # #try resolving negative branch lengths
-# 
+#
 # #So in this case we ruin our tree for BAMM. So, instead let us manually change branch lengths to slightly positive values
 # consensus.eric$edge.length[consensus.eric$edge.length<0]<-0
-# 
+#
 # #And now lets see if our tree is hunky dory
 # is.ultrametric(consensus.eric)
 # is.binary.tree(consensus.eric)
 # # Now to check min branch length:
 # min(consensus.eric$edge.length)
-# 
-# #Now it is no longer ultrametric 
+#
+# #Now it is no longer ultrametric
 # consensus.eric <- force.ultrametric(consensus.eric, method = "nnls")
-# 
+#
 # #Change non-zero to slight positive
 # consensus.eric$edge.length[consensus.eric$edge.length==0]<-1e-9
-# 
+#
 # #And now once again
 # is.ultrametric(consensus.eric)
 # is.binary.tree(consensus.eric)
@@ -111,12 +113,12 @@ params = list(treefile = 'consensus_eric.tre',
             updateEventRateScale = 4.0,
             localGlobalMoveRatio = 10.0,
             modeltype = 'speciationextinction', #rather than trait
-            
+
             mcmcWriteFreq = '100000', #turns to one
             eventDataWriteFreq = '100000',
             printFreq = '100000',
             acceptanceResetFreq = '100000',
-          
+
             lambdaInitPrior = as.numeric(priors['lambdaInitPrior']),
             lambdaShiftPrior = '0.05',
             muInitPrior = as.numeric(priors['muInitPrior']),
@@ -140,68 +142,296 @@ generateControlFile(file = bammcontrolfile, type = "diversification",
         params = params)
 ```
 
-We now run the BAMM through command line. Although the source of BAMM is in another directory we have made a sudo link to it so it can be run from anywhere (e.g. working directory of this project). The command line code is: 
+We now run the BAMM through command line. Although the source of BAMM is in another directory we have made a sudo link to it so it can be run from anywhere (e.g. working directory of this project). The command line code is:
 
-``bamm -c control_consensus_eric.txt``
+#BAMM Setup 
 
-> cool 
+##Load trees and check them
 
-###MCC Tree
-
+Read in 100 Passerine Trees from birdtree.org (5966 species) based on the Hackett backbone.
 ```{r}
-is.ultrametric(mcc.trees.eric[["tree_2241"]])
-is.binary.tree(mcc.trees.eric[["tree_2241"]])
-# Now to check min branch length:
-min(mcc.trees.eric[["tree_2241"]]$edge.length)
+passerine.trees <- read.nexus('data/trees/Passerine_Trees_Full.nex')
 ```
 
-Create a control file with same parameters as the consensus tree: 
+For BAMM to work, we need to check to see if trees are ultrametric, binary and edge lengths are greater than 0. 
 
+We can check this on the first tree
 ```{r}
-priors <- setBAMMpriors(mcc.trees.eric[["tree_2241"]], outfile = NULL)
-write.tree(mcc.trees.eric[["tree_2241"]], 'mcc_eric_2241.tre')
+is.ultrametric(passerine.trees[["tree_8950"]])
+is.binary.tree(passerine.trees[["tree_8950"]])
+# Now to check min branch length:
+min(passerine.trees[["tree_8950"]]$edge.length)
+```
 
-# Here is a block of parameters for the control file
-params = list(treefile = 'mcc_eric_2241.tre',
-            sampleFromPriorOnly = 0,
-            runMCMC = 1,
-            initializeModel = 1,
-            useGlobalSamplingProbability = 1,
-            globalSamplingFraction = 0.67,
-            updateLambdaInitScale = 2.0,
-            updateMuInitScale = 2.0,
-            updateLambdaShiftScale = 0.05,
-            updateEventRateScale = 4.0,
-            localGlobalMoveRatio = 10.0,
-            modeltype = 'speciationextinction', #rather than trait
+> good
+
+We can check all 100 trees with this slightly messy script:
+```{r, eval=FALSE}
+is.ultrametric(passerine.trees)
+is.binary.tree(passerine.trees)
+# Now to check min branch length:
+name.passerine.tree <- names(passerine.trees)
+for(x in name.passerine.tree) {
+  if (min(passerine.trees$edge.length[[x]]) > 0)
+    print("good")
+  
+  else print("bad")
+}
+```
+
+> Good, we can use any tree for BAMM
+
+##Writing the Control Files
+
+Create a control file for all the trees (100 files and 100 trees). To do this we can use the ``sapply`` function. 
+
+```{r, results = 'hide'}
+name.passerine.tree <- names(passerine.trees)
+
+priors <- sapply(name.passerine.tree, function(x) {
+  setBAMMpriors(passerine.trees[[x]], outfile = NULL)
+})
+
+sapply(name.passerine.tree, function(x) {
+  write.tree(passerine.trees[[x]], paste("data/bamm_files/", x, ".tre", sep=""))
+})
+
+# Here is a block of parameters for the control file. We can make a control file for each tree:
+params <- list()
+for (x in name.passerine.tree) {
+
+# GENERAL SETUP AND DATA INPUT
+
+params[[x]] <- list(modeltype = 'speciationextinction',
+# Specify "speciationextinction" or "trait" analysis
+                                  
+treefile = paste(x, ".tre", sep=""),
+# File name of the phylogenetic tree to be analyzed
+
+runInfoFilename = 'run_info.txt',
+# File name to output general information about this run
+
+sampleFromPriorOnly = 0,
+# Whether to perform analysis sampling from prior only (no likelihoods computed)
+
+runMCMC = 1,
+# Whether to perform the MCMC simulation. If runMCMC = 0, the program will only
+# check whether the data file can be read and the initial likelihood computed
+
+loadEventData = 0,                       
+# Whether to load a previous event data file
+
+eventDataInfile = 'event_data_in.txt',
+# File name of the event data file to load, used only if loadEventData = 1
+
+initializeModel = 1,
+# Whether to initialize (but not run) the MCMC. If initializeModel = 0, the
+# program will only ensure that the data files (e.g., treefile) can be read
+
+useGlobalSamplingProbability = 1,
+# Whether to use a "global" sampling probability. If False (0), expects a file
+# name for species-specific sampling probabilities (see sampleProbsFilename)
+                                        
+globalSamplingFraction = 1,
+# The sampling probability. If useGlobalSamplingProbability = 0, this is ignored
+# and BAMM looks for a file name with species-specific sampling fractions
+
+sampleProbsFilename = 'sample_probs.txt',
+# File name containing species-specific sampling fractions
+
+seed = as.numeric(gsub("tree_", "", x, perl = TRUE)),
+# Seed for the random number generator. Set for reproducibility to the number of the treefile
+
+overwrite = 1,
+# If True (1), the program will overwrite any output files in the current
+# directory (if present)
+
+
+# PRIORS
+
+expectedNumberOfShifts = 100,
+# prior on the number of shifts in diversification
+# Suggested values: 
+#     expectedNumberOfShifts = 1.0 for small trees (< 500 tips)
+#  expectedNumberOfShifts = 10 or even 50 for large trees (> 5000 tips) 
+ 
+lambdaInitPrior = as.numeric(priors['lambdaInitPrior', x]),
+# Prior (rate parameter of exponential) on the initial lambda value for rate
+# regimes
+
+lambdaShiftPrior = 0.05,
+# Prior (std dev of normal) on lambda shift parameter for rate regimes
+# You cannot adjust the mean of this distribution (fixed at zero, which is
+# equal to a constant rate diversification process)
+
+muInitPrior = as.numeric(priors['muInitPrior', x]),
+# Prior (rate parameter of exponential) on extinction rates  
+
+lambdaIsTimeVariablePrior = 1,
+# Prior (probability) of the time mode being time-variable (vs. time-constant)
             
-            mcmcWriteFreq = '100000', #turns to one
-            eventDataWriteFreq = '100000',
-            printFreq = '100000',
-            acceptanceResetFreq = '100000',
-          
-            lambdaInitPrior = as.numeric(priors['lambdaInitPrior']),
-            lambdaShiftPrior = '0.05',
-            muInitPrior = as.numeric(priors['muInitPrior']),
 
-            numberOfGenerations = '150000000', #Command line runs 150 million times
-            runMCMC = 1,
-            overwrite = 1,
-            seed = -1,
-            expectedNumberOfShifts = '24', #Huang and Rabosky had 40 with a full bird tree of 6,670 species. So with 4000 we would expect slightly less
+# MCMC SIMULATION SETTINGS & OUTPUT OPTIONS
 
-            lambdaIsTimeVariablePrior = '0',
-            updateRateLambdaShift = '1',
-            updateRateEventPosition = '1',
-            numberOfChains = '1',
-            outName = 'consensus.eric')
+numberOfGenerations = '100000000',
+# Number of generations to perform MCMC simulation
 
-bammcontrolfile <- paste("control_", "mcc_eric_2241", ".txt", sep="")
+mcmcOutfile = 'mcmc_out.txt',
+# File name for the MCMC output, which only includes summary information about
+# MCMC simulation (e.g., log-likelihoods, log-prior, number of processes)
+
+mcmcWriteFreq = 1000,
+# Frequency in which to write the MCMC output to a file
+
+eventDataOutfile = 'event_data.txt',
+# The raw event data (these are the main results). ALL of the results are
+# contained in this file, and all branch-specific speciation rates, shift
+# positions, marginal distributions etc can be reconstructed from this output.
+# See R package BAMMtools for working with this output
+
+eventDataWriteFreq = 1000,
+# Frequency in which to write the event data to a file
+
+printFreq = 10000,
+# Frequency in which to print MCMC status to the screen
+
+acceptanceResetFreq = 1000,
+# Frequency in which to reset the acceptance rate calculation
+# The acceptance rate is output to both the MCMC data file and the screen
+
+outName = x,
+# Optional name that will be prefixed on all output files (separated with "_")
+# If commented out, no prefix will be used
+
+
+# OPERATORS: MCMC SCALING OPERATORS
+
+updateLambdaInitScale = 2,
+# Scale parameter for updating the initial speciation rate for each process
+
+updateLambdaShiftScale = 0.1,
+# Scale parameter for the exponential change parameter for speciation
+
+updateMuInitScale = 2,
+# Scale parameter for updating initial extinction rate for each process
+
+updateEventLocationScale = 0.1,
+# Scale parameter for updating LOCAL moves of events on the tree
+# This defines the width of the sliding window proposal
+ 
+updateEventRateScale = 4,
+# Scale parameter (proportional shrinking/expanding) for updating
+# the rate parameter of the Poisson process
+
+# OPERATORS: MCMC MOVE FREQUENCIES
+
+updateRateEventNumber = 1,
+# Relative frequency of MCMC moves that change the number of events
+
+updateRateEventPosition = 0.25,
+# Relative frequency of MCMC moves that change the location of an event on the
+# tree
+
+updateRateEventRate = 1,
+# Relative frequency of MCMC moves that change the rate at which events occur 
+
+updateRateLambda0 = 1,
+# Relative frequency of MCMC moves that change the initial speciation rate
+# associated with an event
+
+updateRateLambdaShift = 1,
+# Relative frequency of MCMC moves that change the exponential shift parameter
+# of the speciation rate associated with an event
+
+updateRateMu0 = 1,
+# Relative frequency of MCMC moves that change the extinction rate for a given
+# event
+
+updateRateLambdaTimeMode = 0,
+# Relative frequency of MCMC moves that flip the time mode
+# (time-constant <=> time-variable)
+
+localGlobalMoveRatio = 10,
+# Ratio of local to global moves of events 
+
+
+# INITIAL PARAMETER VALUES
+
+lambdaInit0 = 0.032,
+# Initial speciation rate (at the root of the tree)
+
+lambdaShift0 = 0,
+# Initial shift parameter for the root process
+
+muInit0 = 0.005,
+# Initial value of extinction (at the root)
+
+initialNumberEvents = 0,
+# Initial number of non-root processes
+
+
+# METROPOLIS COUPLED MCMC
+
+numberOfChains = 1,
+# Number of Markov chains to run
+
+deltaT = 0.01,
+# Temperature increment parameter. This value should be > 0
+# The temperature for the i-th chain is computed as 1 / [1 + deltaT * (i - 1)]
+
+swapPeriod = 1000,
+# Number of generations in which to propose a chain swap
+
+chainSwapFileName = 'chain_swap.txt',
+# File name in which to output data about each chain swap proposal.
+# The format of each line is [generation],[rank_1],[rank_2],[swap_accepted]
+# where [generation] is the generation in which the swap proposal was made,
+# [rank_1] and [rank_2] are the chains that were chosen, and [swap_accepted] is
+# whether the swap was made. The cold chain has a rank of 1.
+
+
+# NUMERICAL AND OTHER PARAMETERS
+
+minCladeSizeForShift = 3,
+# Allows you to constrain location of possible rate-change events to occur
+# only on branches with at least this many descendant tips. A value of 1
+# allows shifts to occur on all branches. 
+
+segLength = 0.025,
+# Controls the "grain" of the likelihood calculations. Approximates the
+# continuous-time change in diversification rates by breaking each branch into
+# a constant-rate diversification segments, with each segment given a length
+# determined by segLength. segLength is in units of the root-to-tip distance of
+# the tree. So, if the segLength parameter is 0.01, and the crown age of your
+# tree is 50, the "step size" of the constant rate approximation will be 0.5.
+# If the value is greater than the branch length (e.g., you have a branch of
+# length < 0.5 in the preceding example) BAMM will not break the branch into
+# segments but use the mean rate across the entire branch.
+
+outName = x)
+  }
+
+bammcontrolfile <- list()
+for (x in name.passerine.tree) {
+  bammcontrolfile[x] <- paste("data/bamm_files/control_", x, ".txt", sep="")
+}
 
 # Now writing control parameters to file
-generateControlFile(file = bammcontrolfile, type = "diversification",
-        params = params)
+
+for (x in name.passerine.tree) {generateControlFile(file = bammcontrolfile[[x]], type = "diversification", params = params[[x]])}
 ```
+
+BAMM can be run through the terminal through the following syntax: ``bamm -c control_tree_xxxx.txt``. To generate these commands we can use a loop function, from which we get:
+
+```{r}
+bamm.commands <- list()
+for (x in name.passerine.tree) {
+  bamm.commands[x] <- paste("bamm -c control_", x, ".txt", sep="")
+}
+```
+
+
+> cool
 
 
 
@@ -756,5 +986,7 @@ prelim.dataframe %>% ggplot(aes(x=Colour.discriminability, y = SDi))+
 ```{r}
 summary(lm(Colour.discriminability ~ SDi, data = prelim.dataframe))
 ```
+
+
 
 

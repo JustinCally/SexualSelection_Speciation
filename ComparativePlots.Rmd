@@ -1,0 +1,342 @@
+---
+title: "ComparativePlots"
+author: "Justin Cally"
+date: "03/09/2018"
+output: html_document
+---
+
+#Phylo Plots
+
+```{r, fig.width = 6.5, fig.height = 6.5}
+pdf("Figures/BAMMplot.spec.pdf", width = 20, height = 20)
+BAMMplot.spec <- plot.bammdata(MCC.BAMM.ED, 
+                          breaksmethod = "jenks", 
+                          spex="s", 
+                          method = "polar", 
+                          lwd=0.5, 
+                          tau=0.003, 
+                          logcolor = T, 
+                          vtheta = 90, 
+                          rbf = 0.02,
+            pal= c("#ffffe5","#f7fcb9","#d9f0a3","#addd8e","#78c679","#41ab5d","#238443","#006837","#004529"))
+dev.off()
+```
+
+Plot phylorate plot, good way of visualizing diversification rates
+```{r, fig.width = 6.5, fig.height = 6.5}
+pdf("Figures/BAMMplot.spec.tips.pdf", width = 20, height = 20)
+BAMMplot.spec.tips <- plot.bammdata(MCC.BAMM.ED, 
+                          breaksmethod = "jenks", 
+                          spex="s", 
+                          method = "polar", 
+                          lwd=0.5, 
+                          tau=0.003, 
+                          logcolor = T, 
+                          vtheta = 90, 
+                          rbf = 0.02,
+                          labels = T,
+                          cex = 0.075,
+            pal= c("#ffffe5","#f7fcb9","#d9f0a3","#addd8e","#78c679","#41ab5d","#238443","#006837","#004529"))
+addBAMMlegend(BAMMplot.spec, location="bottom", direction = "horizontal", side = 1)
+
+dev.off()
+```
+
+Get histogram of extinction rates
+
+```{r}
+#BAMMplot.spec[["colordens"]][["kde.y"]] <- log1p(BAMMplot.spec[["colordens"]][["kde.y"]] )
+#pdf("figures/BAMMplot_hist.pdf", width = 8, height = 4)
+#create phylorate plot to generate output
+ratesHistogram(BAMMplot.spec, plotBrks = F, xlab = 'Speciation rate', ylab = 'Frequency', lwd = 0.05)
+#dev.off()
+
+```
+
+##Plot for DR mean rate
+
+
+```{r}
+cols <- c("#543005", "#8c510a", "#bf812d", "#dfc27d", "#c0d884",
+           brewer.pal(n = 9, name = "BuGn")[4:9])
+cols <- c('#B76643','#B76643','#B76643','#B76643','#B47339','#AC8032','#A08E33','#909B3C','#7DA64D', brewer.pal(n = 9, name = "Greens")[5:9], "#00441B", "#00441B", "#00441B")
+
+cols <- c(
+'#543005',
+'#8c510a',
+'#fd8d3c',
+'#feb24c',
+'#fed976',
+'#ffeda0',
+#'#f7fcb9',
+'#d9f0a3',
+'#addd8e',
+'#78c679',
+'#41ab5d',
+'#238443',
+'#006837',
+'#006837',
+'#004529',
+'#004529',
+'#004529')
+
+cols <- c(
+'#211F29',
+'#262B37',
+'#2A3945',
+'#2C4751',
+'#2D565C',
+'#2F6565',
+'#34746C',
+'#3E8470',
+'#4D9371',
+'#60A171',
+'#78B06F',
+'#92BD6D',
+'#B0C96B',
+'#D0D46B'
+)
+
+restricted.data %>% ggplot(aes(x = exp(MCC.DR), y = 0, fill = ..x..))+
+  geom_density_ridges_gradient(scale = 3, size = 0.05, gradient_lwd = 0.75)+
+  scale_fill_gradientn(colours = cols, guide = F, breaks = c(0.02, 0.1, 0.5, 2.5))+
+  theme_minimal()+
+  scale_x_continuous(trans = "log", breaks = c(0.02, 0.1, 0.5, 2.5))+
+  scale_y_discrete(expand = c(0,0))+
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 14),
+        axis.line.y = element_blank(), 
+        panel.grid = element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.x.bottom = element_line())
+
+MCC.BAMM.model.data %>% ggplot(aes(x = SDi, y = 0, fill = ..x..))+
+  geom_density_ridges_gradient(scale = 3, size = 0.05, gradient_lwd = 0.75)+
+  scale_fill_distiller(palette = "OrRd", direction = 1, guide = F)+
+  theme_minimal()+
+  scale_y_discrete(expand = c(0,0))+
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 14),
+        axis.line.y = element_blank(), 
+        panel.grid = element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.x.bottom = element_line())
+
+MCC.BAMM.model.data %>% ggplot(aes(x = range.size.m2, y = 0, fill = ..x..))+
+  geom_density_ridges_gradient(scale = 3, size = 0.05, gradient_lwd = 0.75)+
+  scale_fill_distiller(palette = "BuPu", direction = 1, guide = F)+
+  scale_x_log10()+
+  theme_minimal()+
+  scale_y_discrete(expand = c(0,0))+
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_text(size = 14),
+        axis.line.y = element_blank(), 
+        panel.grid = element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.x.bottom = element_line())
+```
+
+
+```{r}
+#Get more leasonable intercept for gls slope
+SDi.intercept.BAMM <- coef(gls(log(mean.lambda) ~ SDi, data = MCC.BAMM.model.data))[1]
+
+BAMM.scatter <- MCC.BAMM.model.data %>% ggplot(aes(y = mean.lambda, x = SDi, fill = ..x..))+
+  # geom_point(data = restricted.data, aes(x = SDi, y = exp(MCC.DR)), color = "gray70")+
+  geom_point(shape = 21, stroke = 0.35)+
+  scale_fill_distiller(palette = "OrRd", direction = 1, guide = F)+
+  scale_y_continuous(breaks = c(0.01,0.1, 1.0), limits = c(0.01, 7), trans = "log")+
+  theme_bw()+
+  xlab("Sexual Dichromatism")+
+  ylab("Speciation Rate (BAMM)")+
+    geom_abline(slope = MCC.Lambda.top[["coefficients"]][["SDi"]],
+             intercept =  SDi.intercept.BAMM, 
+             size = 1)+
+  geom_abline(slope = min(BAMM.lambda.pgls.summary %>% 
+                            filter(Parameter == "SDi") %>% 
+                            select(Estimate)),
+             intercept =  SDi.intercept.BAMM, 
+             size = .75, 
+             linetype = 2)+
+  geom_abline(slope = max(BAMM.lambda.pgls.summary %>% 
+                            filter(Parameter == "SDi") %>% 
+                            select(Estimate)),
+             intercept =  SDi.intercept.BAMM, 
+             size = .75, 
+             linetype = 2)+
+    scale_x_continuous(expand = c(0,0.3))+
+    theme(panel.grid = element_blank(),
+          axis.line = element_line(),
+          panel.border = element_blank(),
+          plot.margin = unit(c(.5,.5,.5,.5), "cm"))
+
+#Get more leasonable intercept for gls slope
+SDi.intercept <- coef(gls(MCC.DR ~ SDi, data = restricted.data))[1]
+
+DR.scatter <- restricted.data %>% ggplot(aes(y = exp(MCC.DR), x = SDi, fill = ..x..))+
+  geom_point(shape = 21, stroke = 0.35)+
+  scale_fill_distiller(palette = "OrRd", direction = 1, guide = F)+
+  theme_bw()+
+  scale_y_continuous(breaks = c(0.01,0.1, 1.0), limits = c(0.01, 7), trans = "log")+
+  scale_x_continuous(expand = c(0,0.3))+
+  xlab("Sexual Dichromatism")+
+  ylab("Speciation Rate")+
+  geom_smooth(method = "glm", se = F, color = "black", linetype = 5)+ 
+    theme(panel.grid = element_blank(),
+          axis.line = element_line(),
+          panel.border = element_blank(),
+          plot.margin = unit(c(.5,.5,.5,.5), "cm"))
+
+#Get more leasonable intercept for gls slope
+range.model <- coef(gls(MCC.DR ~ log(range.size.m2), 
+                            data = restricted.data))
+
+newRange <- data.frame(`range.size.m2` = restricted.data$range.size,
+                         SDi = mean(restricted.data$SDi),
+                         NPP = mean(restricted.data$NPP),
+                         bioclim4 = mean(restricted.data$bioclim4),
+                         residuals.PC1 = mean(restricted.data$residuals.PC1),
+                         PC1.LIG = mean(restricted.data$PC1.LIG))
+restricted.data$Range.Predict <- predict(MCC.DR.top, newRange)
+
+Range.scatter <- restricted.data %>% ggplot(aes(y = exp(MCC.DR), x = range.size.m2, fill = ..x..))+
+  geom_point(shape = 21, stroke = 0.35)+
+  scale_fill_distiller(palette = "BuPu", direction = 1, guide = F, trans = "log")+
+  theme_bw()+
+  scale_y_continuous(breaks = c(0.01,0.1, 1.0), limits = c(0.01, 7), trans = "log")+
+  scale_x_continuous(expand = c(0,0.3), trans = "log", breaks = c(1, 1*(10^7), 1*(10^10), 1*(10^13)))+
+  xlab("Range Size")+
+  ylab("Speciation Rate")+
+    geom_smooth(method = "glm", se = F, color = "black", linetype = 5)+
+    theme(panel.grid = element_blank(),
+          axis.line = element_line(),
+          panel.border = element_blank(),
+          plot.margin = unit(c(.5,.5,.5,.5), "cm"))
+
+BAMM.scatter
+DR.scatter
+Range.scatter
+```
+
+```{r}
+grid.arrange(DR.scatter, Range.scatter, nrow = 2)
+```
+
+```{r}
+newRange <- data.frame(`range.size.m2` = restricted.data$log.range.size,
+                         SDi = mean(restricted.data$SDi),
+                         NPP = mean(restricted.data$NPP),
+                         bioclim4 = mean(restricted.data$bioclim4),
+                         residuals.PC1 = mean(restricted.data$residuals.PC1),
+                         PC1.LIG = mean(restricted.data$PC1.LIG))
+restricted.data$Range.Predict <- predict(MCC.DR.top, newRange)
+```
+
+
+
+Plotting a tree showing the estimated BAMM speciation rates 
+
+```{r}
+#edge.rates <- getMeanBranchLengthTree(MCC.BAMM.ED, rate = "speciation")
+#saveRDS(edge.rates, "data/edge.rates.lambda.rds")
+edge.rates <- readRDS("data/edge.rates.lambda.rds")
+edge.rates.df <- data.frame(edge.rates[["phy"]][["edge"]], edge.rates[["phy"]][["edge.length"]]) %>% `colnames<-`(c("parent", "node", "rate"))
+
+fortified.MCC.tree <- fortify(MCC.BAMM.tree)
+fortified.MCC.tree <- left_join(fortified.MCC.tree, edge.rates.df,  by = c("parent", "node"))
+```
+
+Creating other plots: 
+
+This is the order of species on the big speciation plot going anti-clockwise:
+
++ Lepidothrix coeruleocapilla
++ Muscisaxicola capistratus 
++ Cercomacra manu
++ Cranioleuca curtata
++ Malurus pulcherrimus
++ Pachycephala pectoralis pectoralis
++ Paradisaea rubra
++ Mayrornis schistaceus
++ Progne cryptoleuca
++ Acrocephalus australis
++ Zosterops erythropleurus
++ Phainopepla nitens
++ Promerops gurneyi
++ Euplectes franciscanus
++ Euphonia rufiventris
++ Atlapetes leucopterus
++ Geospiza magnirostris
++ Sporophila bouvronides
+
+
+Plot the SDi val
+```{r}
+# library(RColorBrewer)
+# col <- c(scale_color_distiller(palette = "OrRd", direction = 1), scale_color_distiller(palette = "BuPu", direction = 1))
+ggtree.plot <- ggtree(fortified.MCC.tree, aes(color =  rate),
+                      layout="fan", open.angle = 90, size = 0.175) + 
+  xlim(-75, NA)+
+  scale_color_distiller(palette = "YlGn", direction = 1, guide = F, trans = "log", breaks=c(0.05, 0.15, 0.5, 1.5))+
+  geom_tiplab(size=0.1, color = "black")
+
+    # theme(legend.position = "bottom",
+    #     legend.text = element_text(size = 18))
+
+# ggtree.plot <-gheatmap2(ggtree.plot, data = MCC.BAMM.model.data %>% select(SDi), width=0.05, colnames = FALSE, low = "orange", high = "red")
+
+#  scale_fill_distiller(palette = "OrRd", direction = 1, na.value = "white", guide = guide_colorbar(direction = "horizontal", label.position = "bottom", barheight = 1.5, barwidth = 25, label.vjust = -0.5))
+    
+  # theme(legend.position = "bottom",
+  #       legend.text = element_text(size = 18))
+
+# ggtree.plot <-gheatmap2(ggtree.plot, data = log(MCC.BAMM.model.data %>% select(range.size.m2)), width=0.05, colnames = FALSE, offset = 3.5)+
+  # scale_fill_distiller(palette = "BuPu", direction = 1, na.value = "white", guide = guide_colorbar(direction = "horizontal", label.position = "bottom", barheight = 1.5, barwidth = 25, label.vjust = -0.5))+
+
+
+
+```
+
+Plot using DR 
+
+```{r}
+DR.tips <- MCC.dr.df$es %>% `names<-`(MCC.dr.df$binomial)
+# tree.rates <- contMap(MCC.BAMM.tree, DR.tips)
+tree.rates.node <- fastAnc(MCC.BAMM.tree, DR.tips)
+tree.rates.node.df <- as.list(tree.rates.node)
+tree.rates.node.df <- bind_rows(tree.rates.node.df) %>% t()
+colnames(tree.rates.node.df) <- "es"
+
+DR.tips.df <- MCC.dr.df %>% select(es, binomial) %>% rename(label = binomial)
+node.rates <- rbind(DR.tips.df %>% select(es), tree.rates.node.df)
+
+fortified.DR.tree <- fortify(MCC.BAMM.tree)
+fortified.DR.tree <- cbind(fortified.DR.tree, node.rates) %>% rename(rate = es)
+```
+
+```{r}
+cols <- c("#543005", "#8c510a", "#bf812d", "#dfc27d", "#d9ef8b",
+           brewer.pal(n = 9, name = "YlGn")[4:9])
+display.brewer.pal(n = 11, name = "RdYlGn")[4:11]
+#cols <- c("#045a8d", "#74a9cf", "#ffd92f", "#d9f0a3", "#78c679", "#005a32")
+#20 x 20 plots
+ggtree.plot.dr <- ggtree(fortified.DR.tree, aes(color =  rate),
+                      layout="fan", open.angle = 90, size = 0.175) + 
+  xlim(-75, NA)+
+  scale_colour_gradientn(colours = cols, 
+                         #breaks = c(-4, -2, 1.75, 1.2),
+                         guide = F) +
+  theme(legend.position = "bottom",
+        legend.text = element_text(size = 18))
+
+# ggtree.plot.dr <- gheatmap2(ggtree.plot.dr, data = MCC.BAMM.model.data %>% select(SDi), width=0.05, colnames = FALSE) + 
+#   scale_fill_distiller(palette = "OrRd", direction = 1, na.value = "white", guide = guide_colorbar(direction = "horizontal", label.position = "bottom", barheight = 1.5, barwidth = 25, label.vjust = -0.5))+
+#     theme(legend.position = "bottom",
+#         legend.text = element_text(size = 18))
+```
+
+
+
