@@ -49,6 +49,10 @@ library(phangorn)
 library(kableExtra)
 library(RColorBrewer)
 library(tibble)
+library(stargazer)
+library(ggraph)
+#devtools::install_github("Ax3man/phylopath")
+library(phylopath)
 library("EBImage") # for images
 library("ggtree")
 source("bamm_extinction/functions/check_and_fix_ultrametric.R")
@@ -2355,7 +2359,7 @@ grid.arrange(symmetrise_scale(Armenta.DR.plot, "x"),
              symmetrise_scale(Armenta.Mu.plot, "x"), 
              nrow = 1)
 ```
-**Figure S9:** Measures of sexual dichromatism using a more precise measure in spectrophotometry do not change the main patterns seen within the PGLS models analysed here. This dataset is a subset of the complete dataset (n = 581), thus drawing conclusions for the other predictors (e.g. borderline long term temperature variation and spatial temperature variation) potentially risks type I error; additionally these environmental predictors were not measured differently in this analysis compared to the previous above so we have no obvious reason to make conclusions from this subset for the effects of the environmental predictors.
+**Figure S10:** Measures of sexual dichromatism using a more precise measure in spectrophotometry do not change the main patterns seen within the PGLS models analysed here. This dataset is a subset of the complete dataset (n = 581), thus drawing conclusions for the other predictors (e.g. borderline long term temperature variation and spatial temperature variation) potentially risks type I error; additionally these environmental predictors were not measured differently in this analysis compared to the previous above so we have no obvious reason to make conclusions from this subset for the effects of the environmental predictors.
 
 **Table S11:** MCC estimates from the above plot are presented as numerical values below. 
 ```{r}
@@ -2433,7 +2437,7 @@ SS.subset %>% ggplot(aes(x = SDi, y = Sexual_selection_ppca))+
   geom_smooth(method = "lm")+
   theme_minimal()
 ```
-**Figure S10:** The relationship between absolute sexual dichromatism and the sexual selection. Although positively correlated the distribution is very noisy with species having high sexual dichromatism and low sexual selection and visa versa.Colour.discriminability
+**Figure S11:** The relationship between absolute sexual dichromatism and the sexual selection. Although positively correlated the distribution is very noisy with species having high sexual dichromatism and low sexual selection and visa versa.Colour.discriminability
 ```{r}
 # summary(lm(SDi ~ Sexual_selection_ppcaColour.discriminability
 #    data = SS.subset))$r.squared %>% pander()
@@ -2445,6 +2449,8 @@ cor(SS.subset$SDi, SS.subset$Sexual_selection_ppca)
 ```{r, eval = FALSE}
 #Prune tree
 pruned.MCC.Subset.tree <- drop.tip(MCC.passerine,MCC.passerine$tip.label[-match(SS.subset$TipLabel, MCC.passerine$tip.label)])
+
+saveRDS(pruned.MCC.Subset.tree, 'data/pruned.MCC.Subset.tree.rds')
 
 #Set rownames to match tree
 rownames(SS.subset) <- SS.subset$TipLabel
@@ -2994,7 +3000,7 @@ grid.arrange(symmetrise_scale(Subset.DR.plot, "x"),
              symmetrise_scale(Subset.Mu.plot, "x"), 
              nrow = 1)
 ```
-**Figure S11:** Measures of sexual selection a phylogenetic pca of sexual dimorphism, social polygyny and paternal care provide some evidence to suggest sexual selection predicts extinction rate (DR and ND models). This figure is seen in Figure 1 within the manuscript 
+**Figure S12:** Measures of sexual selection a phylogenetic pca of sexual dimorphism, social polygyny and paternal care provide some evidence to suggest sexual selection predicts extinction rate (DR and ND models). This figure is seen in Figure 1 within the manuscript 
 
 **Table S14:** MCC model estimates from the above model are presented here as numberical values with 95 % CIs.
 ```{r}
@@ -3052,6 +3058,83 @@ Subset.hpd.Lambda.top %>% pander(split.table = Inf, digits = 3, caption = "Subse
 Subset.hpd.Mu.top %>% pander(split.table = Inf, digits = 3, caption = "Subset BAMM Extinction HPD Interval")
 ```
   
+  
+##Phylogenetic Path Analysis
+
+We undertook a phylogenetic path analysis using a model of causal pathways *a priori*. To do this we use the ``phylopath`` function. Our path analysis is undertaken on the dataset subset to species with measures of male bias sexual selection. Additionallty, the path analysis is restricted to using one measure of speciation ($\lambda_{DR}$) and the MCC tree. Our reasoning for the causal links are described breifly below: 
+
+1) **$\lambda_{DR}$** dependent upon **Sexual Dichromatism**: Sexual dichromatism would directly impact speciation if there is an association with the evolvability of chromatism and speciation, this may more rapidly lead to niche divergence or reproductive isolation.
+2) **$\lambda_{DR}$** dependent upon **Sexual Selection**: This was a major hypothesis in our study (see introduction).  
+3) **$\lambda_{DR}$** dependent upon **Temperature Seasonality**: More variable environments are broadly expected to impact the resources, niches and fitness of species; thus there is an expectation that more variable environments may impact speciation rate.  
+4) **$\lambda_{DR}$** dependent upon **Range Size**: As previously seen in the PGLS models range size shows a negative correlation with speciation rate; expected reasons for this causal link include lower dispersal ability in smaller ranges correlating with lower gene flow and greater speciation. It may also reflect niche specialisation and thus in line with the previous point increase speciation and reduce gene flow.  
+5) **Sexual Dichromatism** dependent upon **Sexual Selection**: Higher levels of sexual selection will promote showy males and drab females (sexual dichromatism).  
+6) **Sexual Dichromatism** dependent upon **Temperature Seasonality**: Ecological aspects may facilitate sexual dimorphism as niche partitioning between the sexes causes sex-limited traits and colouration that are independent of mate choice or male-male competition.  
+7) **Sexual Selection** dependent upon **Temperature Seasonality**: Greater environmental variability/stress may impact the usefulness (fitness effects) of sexual selection (see introduction).  
+8) **Range Size** dependent upon **Sexual Selection**: Sexual selection may often depend on local adaptations and the alignment of sexually selected traits with locally valuable traits, range size may limit this leading to a negative correlation. Alternatively if sexual selection has added fitness and evolvability benefits there may be increased range sizes in sexually selected species.  
+9) **Range Size** dependent upon **Temperature Seasonality**: Anticipated to be more of a correlation than causal link. Yet a speecies range size may be dependent upon how variable their environment is and the availability to local resources.  
+
+```{r, eval = F}
+#Set rownames to match tree
+rownames(SS.subset) <- SS.subset$TipLabel
+pruned.MCC.Subset.tree <- readRDS('data/pruned.MCC.Subset.tree.rds')
+SS.subset$log.range.size <- log(SS.subset$range.size.m2)
+
+SS.subset2 <- SS.subset %>% rename(
+  DR = MCC.DR,
+  SD = SDi,
+  TS = bioclim4,
+  RS = log.range.size,
+  SS = Sexual_selection_ppca
+)
+
+models.Subset <- define_model_set(
+  one = c(DR ~ SD, 
+          DR ~ SS,
+          DR ~ TS,
+          DR ~ RS,
+          SD ~ SS,
+          SD ~ TS,
+          SS ~ TS,
+          RS ~ SS,
+          RS ~ TS)
+)
+
+result <- phylo_path(models.Subset, data = SS.subset2, tree = pruned.MCC.Subset.tree, model = 'lambda')
+  
+#best_model <- best(result, boot = 500)
+set.seed(1)
+path.plot <- plot(x = best_model,
+     type = "color",
+     algorithm = 'gem',
+     manual_layout = NULL,
+     curvature = 0.1,
+     colors = c("#b2182b", "#2166ac"),
+     show.legend = F)
+
+saveRDS(best_model, 'data/path_model.rds')
+#Inspect the coefficients with their SE
+
+# coef_plot(best_model, error_bar = "ci", reverse_order = TRUE) + 
+#   ggplot2::coord_flip()+
+#   ggplot2::theme_minimal()
+
+# pdf("Figures/Path_Plot.pdf", width=8, height=8)
+# path.plot
+# dev.off()
+
+# path.plot
+```
+
+```{r, fig.width = 6, fig.height = 4, }
+best_model <- readRDS('data/path_model.rds')
+coef_plot(best_model, error_bar = "ci", reverse_order = TRUE) + 
+  ggplot2::coord_flip()+
+  ggplot2::theme_minimal()
+```
+
+**Figure S13:** Path analysis standardized regression coefficients vary across relationships. Error bars are derived from confidence intervals through 500 bootstrapped iterations. Paths with error bars not everlapping zero are presented with an asterix in Figure 3 within the manuscript.
+
+
 #Additional Figures and Tables
 
 ```{r, fig.width = 8, fig.height = 6}
@@ -3076,9 +3159,9 @@ BAMM.Lambda.100Trees %>% ggplot(aes(x = mean.lambda, y = DR.Lambda.100Trees$DR))
 # mean(DR.Lambda.100Trees$sd)
 # mean(BAMM.Lambda.100Trees$sd)
 ```
-**Figure S12:**
+**Figure S14:**
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, echo = F}
 all.trees.join <- left_join(DR.Lambda.100Trees %>% select(TipLabel, DR), BAMM.Rates.100Trees %>% select(mean.lambda, TipLabel))
 cor(all.trees.join$DR, all.trees.join$mean.lambda)
 ```
@@ -3090,15 +3173,15 @@ restricted.data %>% ggplot(aes(x = MCC.DR, y = MCC.BAMM.model.data$mean.lambda))
   geom_point()+
   theme_minimal()
 ```
-**Figure S13:**
+**Figure S15:**
 
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, echo = F}
 MCC.tree.join <- left_join(restricted.data %>% select(MCC.DR, TipLabel), MCC.BAMM.model.data %>% select(mean.lambda, TipLabel))
 cor(MCC.tree.join$MCC.DR, MCC.tree.join$mean.lambda)
 ```
 
-```{r}
+```{r, eval = F, echo = F}
 MCC.BAMM.df$CV.lambda <- sqrt(exp(MCC.BAMM.df$var.lambda) - 1)*100
 mean(MCC.BAMM.df$CV.lambda)
 min(MCC.BAMM.df$CV.lambda)
@@ -3113,7 +3196,7 @@ MCC.BAMM.df %>% ggplot(aes(y = CV.lambda)) +
 ```
 
 What if we run the subset df qwith SDi
-```{r}
+```{r, eval = FALSE, echo = F}
 #Run model for DR
 Subset.MCC.DR.SDi <- gls(MCC.DR ~ SDi
                          + log(range.size.m2)
@@ -3125,15 +3208,17 @@ Subset.MCC.DR.SDi <- gls(MCC.DR ~ SDi
                 data = SS.subset, 
                 method = "REML")
 
-summary(Subset.MCC.DR.SDi)
+#stargazer(Subset.MCC.DR.SDi, type = "html")
 ```
+
+
 
 
 
 #R Session information
   
 ```{r}
-sessionInfo() %>% pander
+sessionInfo() %>% pander()
 ```
 
 
