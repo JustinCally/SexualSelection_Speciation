@@ -5,10 +5,10 @@ author:
 - 
 - '*\textit{justin.g.cally@gmail.com}'
 output:
-  pdf_document: default
-  html_document: default
   word_document:
       pandoc_args: ["--smart"]
+  html_document: default
+  pdf_document: default
 bibliography: References/SS_Extinction.bib
 header-includes: \usepackage{microtype} \usepackage[all]{hypcap} \usepackage{amsmath}
   \usepackage{booktabs} \usepackage{caption} \usepackage[labelfont=bf]{caption} \usepackage{titling}
@@ -23,7 +23,7 @@ abstract: Sexual selection may influence patterns of diversification. Yet their 
 \maketitle\unmarkedfntext{\textsuperscript{§}School of BioSciences, The University of Melbourne, Victoria, Australia.}
 
 \newpage
-#Introduction
+#Introduction xxxxxx
 
 **Process of speciation**: Selection pressures drive speciation. As populations diverge they accumulate genetic and phenotypic changes that ultimately erect barriers against gene flow [@Presgraves_2010; *but see* @Shaw_2011]. In this view populations will speciate and adapt more readily to to new divergent environments if the selection pressures and evolvability of the traits under selection are high. Hence, the rate at which speciation occurs is likely dependent on the both the populations adaptive potential/fitness and the evolvability of phenotypic traits such as morphology or chromatism [@Rabosky_morph_2013; @Hugall_2012]. Sexual selection is an evolutionary force likely to affect fitness components as well as the evolvability of morphological and chromatic traits such as ornaments involved in mating displays or weapons used in male-male competition. It is therefore hypothesised that sexual selection is a key driver of diversification through shifting the rates of adaptation, speciation and extinction.  
 
