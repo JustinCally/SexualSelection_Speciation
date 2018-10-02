@@ -342,4 +342,112 @@ ggtree.plot.dr <- ggtree(fortified.DR.tree, aes(color =  rate),
 ```
 
 
+```{r}
+Lepidothrix.coeruleocapilla.data <- restricted.data %>% filter(TipLabel == "Lepidothrix_coeruleocapilla")
+
+LC.bioclim4 <- data.frame(
+  value = rnorm(1000, mean = Lepidothrix.coeruleocapilla.data$bioclim4, sd = Lepidothrix.coeruleocapilla.data$se.bioclim4))
+
+LC.bioclim4$name <- "bioclim4"
+
+LC.bioclim4 %>% ggplot()+
+  geom_density_ridges(aes(x = value/10, y = 0), rel_min_height = 0.005, fill = "#fc8d62")+
+  scale_y_discrete(expand = c(0,0))+
+  ylab("")+
+  xlab("Temperature Seasonality")+
+
+  theme_bw()+
+  
+  theme(
+        text = element_text(size=18),
+        panel.border= element_blank(),
+        axis.line.y =element_blank(),
+        axis.line.x = element_line(),
+        axis.ticks.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(), 
+        legend.text = element_text(size=18), 
+        legend.title=element_text(size=18, face = "bold"),
+        axis.title.x = element_text(hjust = 0.5, size = 24),
+        axis.title.y = element_text(size = 18, hjust = 0.35, margin = margin(r=-10)),
+        axis.text.y = element_blank(),
+        plot.title = element_text(size = 18))
+```
+
+```{r}
+Lepidothrix.coeruleocapilla.data <- restricted.data %>% filter(TipLabel == "Lepidothrix_coeruleocapilla")
+
+LC.NPP <- data.frame(
+  value = rnorm(1000, mean = Lepidothrix.coeruleocapilla.data$NPP, sd = Lepidothrix.coeruleocapilla.data$NPP.se))
+
+LC.NPP$name <- "NPP"
+
+LC.NPP %>% ggplot()+
+  geom_density_ridges(aes(x = value/10, y = 0), rel_min_height = 0.005, fill = "#a6d854")+
+  scale_y_discrete(expand = c(0,0))+
+  scale_x_continuous(limits = c(1910, 2010))+
+  ylab("")+
+  xlab("NPP")+
+
+  theme_bw()+
+  
+  theme(
+        text = element_text(size=18),
+        panel.border= element_blank(),
+        axis.line.y =element_blank(),
+        axis.line.x = element_line(),
+        axis.ticks.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(), 
+        legend.text = element_text(size=18), 
+        legend.title=element_text(size=18, face = "bold"),
+        axis.title.x = element_text(hjust = 0.5, size = 24),
+        axis.title.y = element_text(size = 18, hjust = 0.35, margin = margin(r=-10)),
+        axis.text.y = element_blank(),
+        plot.title = element_text(size = 18))
+
+LC.NPP <- data.frame(
+  value = rnorm(1000, mean = Lepidothrix.coeruleocapilla.data$NPP, sd = Lepidothrix.coeruleocapilla.data$NPP.se))
+
+LC.NPP$name <- "NPP"
+
+LC.NPP %>% ggplot()+
+  geom_density_ridges(aes(x = value/10, y = 0), rel_min_height = 0.005, fill = "#a6d854")+
+  scale_y_discrete(expand = c(0,0))+
+  scale_x_continuous(limits = c(1910, 2010))+
+  ylab("")+
+  xlab("NPP")+
+
+  theme_bw()+
+  
+  theme(
+        text = element_text(size=18),
+        panel.border= element_blank(),
+        axis.line.y =element_blank(),
+        axis.line.x = element_line(),
+        axis.ticks.y = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(), 
+        legend.text = element_text(size=18), 
+        legend.title=element_text(size=18, face = "bold"),
+        axis.title.x = element_text(hjust = 0.5, size = 24),
+        axis.title.y = element_text(size = 18, hjust = 0.35, margin = margin(r=-10)),
+        axis.text.y = element_blank(),
+        plot.title = element_text(size = 18))
+```
+
+```{r}
+#read nexus
+manakin.trees <- read.nexus(file.choose())
+#get MCC
+manakin.tree <- maxCladeCred(manakin.trees)
+
+manakin.DR <- calculate.log.es(manakin.tree)
+```
 
