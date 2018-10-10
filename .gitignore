@@ -9,7 +9,27 @@
 *.rds
 *.rda
 
+#Except this data needed in Rmarkdown regeneration
+!data/MCC.DR.top.rds
+!data/MCC.ND.top.rds
+!data/MCC.Lambda.top.rds
+!data/MCC.Mu.top.rds
+!data/hpd.DR.top.rds
+!data/hpd.ND.top.rds
+!data/Armenta.hpd.DR.top.rds
+!data/Subset.MCC.DR.top.rds
+!data/Subset.MCC.ND.top.rds
+!data/Subset.MCC.Lambda.top.rds
+!data/Subset.hpd.DR.top.rds
+!data/Subset.hpd.ND.top.rds
+!data/Subset.hpd.Lambda.top.rds
+!data/MCC.BAMM.df.rds
+!data/path_model.rds
 
+#And these 4 figures
+!Figures/ModelEstimates.pdf
+!Figures/DRSpeciationFigure.pdf
+!Figures/Path_Analysis.pdf
 
 Manuscript.docx
 Sexual_Selection_and_Extinction_cache/
