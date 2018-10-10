@@ -3187,18 +3187,18 @@ restricted.data %>% ggplot(aes(x = MCC.DR, y = MCC.BAMM.model.data$mean.lambda, 
 **Figure S15:** Similar to Figure S14, there is a correlation (*r* = `r round(cor(MCC.tree.join$MCC.DR, MCC.tree.join$mean.lambda), digits = 2)`) between $\lambda_{DR}$ and $\lambda_{BAMM}$ with BAMM results showing less heterogeneity. Each point represents a species (*n* = 5,965).
 
 
-```{r, eval = F, echo = F}
+```{r, eval = T, echo = F, results='hide', warning=F}
 MCC.BAMM.df$CV.lambda <- sqrt(exp(MCC.BAMM.df$var.lambda) - 1)*100
 mean(MCC.BAMM.df$CV.lambda)
 min(MCC.BAMM.df$CV.lambda)
 median(MCC.BAMM.df$CV.lambda)
 max(MCC.BAMM.df$CV.lambda)
 
-#saveRDS(MCC.BAMM.df, 'data/MCC.BAMM.df.rds')
-
-MCC.BAMM.df %>% ggplot(aes(y = CV.lambda)) +
-  geom_boxplot(outlier.shape = NA)+
-  scale_y_continuous(trans = "log")
+saveRDS(MCC.BAMM.df, 'data/MCC.BAMM.df.rds')
+# 
+# MCC.BAMM.df %>% ggplot(aes(y = CV.lambda)) +
+#   geom_boxplot(outlier.shape = NA)+
+#   scale_y_continuous(trans = "log")
 ```
 
 ```{r, eval = FALSE, echo = F}
