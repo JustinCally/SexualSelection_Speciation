@@ -7,10 +7,10 @@ author:
 - '*\textit{justin.g.cally@gmail.com}'
 bibliography: References/SS_Extinction.bib
 output:
-  pdf_document: default
-  html_document: default
   word_document:
     pandoc_args: --smart
+  html_document: default
+  pdf_document: default
 header-includes: \usepackage{microtype} \usepackage[all]{hypcap} \usepackage{amsmath}
   \usepackage{booktabs} \usepackage{caption} \usepackage[labelfont=bf]{caption} \usepackage{titling}
   \pretitle{\begin{flushleft}\LARGE} \posttitle{\par\end{flushleft}\vskip 0.5em} \preauthor{\begin{flushleft}\large
