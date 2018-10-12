@@ -1,6 +1,5 @@
 ---
-title: 'Sexual selection, environmental variation, range size and speciation in passerine
-  birds'
+title: 'Male-biased sexual selection, but not sexual dichromatism, predicts speciation in birds'
 author: "Justin G. Cally^1^, Iliana Medina Guzmán^1^ Luke Holman^1^, Devi Stuart-Fox^1^ <br></br> <br></br> ^1^The University of Melbourne"
 subtitle: Supplementary Material
 bibliography: References/SS_Extinction.bib
@@ -71,7 +70,7 @@ knitr::opts_chunk$set(cache=TRUE)
 
 #Compiling the data
 
-For this project we aimed to compile data on a large set of species in the Passerine bird order that would allow us to account for many evolutionary and environmental predictors of speciation. The following details the source and use of the data.
+For this project we aimed to compile data on a large set of species in the passerine bird order that would allow us to account for many evolutionary and environmental predictors of speciation. The following details the source and use of the data.
 
 ##Speciation Rate
 
@@ -97,7 +96,7 @@ We obtained species range distribution maps from Birdlife International (through
 * Net primary productivity (NPP) estimates and variability
 * Average and standard deviation of human population density in the species ranges. 
 
-The code for extracting the environmental data from the species is provided in another R-markdown document **Github link**, however no raw data is provided alongside this file due to the large file size of the shapefile and raster information. We have put the extracted environmental variables in a csv filed called ``complete.dataframe.csv`` for convenience. Briefly for each of the ~ 6,000 species, we:
+Below we outline the code used for extracting spatial data from bird ranges, however no raw data is provided alongside this file due to the large file size of the shapefile and raster information. We have put the extracted environmental variables in a csv filed called ``complete.dataframe.csv`` for convenience. Briefly for each of the ~ 6,000 species, we:
 
 **1)** Randomly sampled the range polygon 1000 times: 
 
