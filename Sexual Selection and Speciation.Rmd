@@ -71,21 +71,21 @@ knitr::opts_chunk$set(cache=TRUE)
 
 #Compiling the data
 
-We aimed to compile data on Passerine birds, which represent the largest group for which relatively complete plylogenetic, trait and environmental data are available. The following details the source and use of the data.
+We aimed to compile data on Passerine birds, which represent the largest group for which relatively complete phylogenetic, trait and environmental data are available. The following details the source and use of the data.
 
 ##Speciation Rate
 
-To obtain speciation rate estimates we used Bayesian Analysis of Macroevolutionary Mixtures (BAMM). Additionally, we compared our BAMM output files (event data)  to an existing extinction rate dataset [@Harvey_2017].
+To obtain speciation rate estimates we used Bayesian Analysis of Macroevolutionary Mixtures (BAMM). Additionally, we compared our BAMM output files (event data)  to an existing rate dataset [@Harvey_2017].
 
 Rather than obtaining one estimate of speciation rate from one tree, we ran BAMM 100 times on 100 trees plus an MCC tree to obtain uncertainty estimates of the speciation rate generated from the phylogeny produced by @Jetz_2012. We also estimated extinction rate from BAMM and speciation rates using the diversification rate and node density statistic ($\lambda_{DR}$ and ($\lambda_{ND}$). See @Rabosky_diversification_2018 for a comparison of methods.
 
-##Sexual Selection
+##Sexual dichromatism and Male-biased Sexual Selection
 
-Our proxy for sexual selection was based on measures of sexual dichromatism. We used two existing datasets; a complete set of male and female plumage scores in Passerines from @Dale_2015 and reflectance data from 1000 birds from @Armenta_2008.
+The first proxy for sexual selection that we used was based on measures of sexual dichromatism. We used two existing datasets; a complete set of male and female plumage scores in Passerines from @Dale_2015 and reflectance data from 1000 birds from @Armenta_2008.
 
-the ratio of which provides an index of sexual dichromatism (SDi). The plumage score was scored using the _Handbook of the Birds of the World_ @delhoyo2011. By scanning images of males and females in this book across multiple patches, @Dale_2015 obtained mean plumage scores from RGB values. @Dale_2015 compared their RGB scores to a dataset of reflectance measurements of Australian birds. The two datasets were correlated but the relationship was expectedly noisy. Here we compare the @Dale_2015 data against another reflectance dataset from @Armenta_2008, which estimated sexual dichromatism as  the mean number of just noticeable differences (JNDs) between male and female plumage colour (discriminability), based on a model of bird colour vision.
+Briefly, @Dale_2015 obtained male and female plumage score, the ratio of which provides an index of sexual dichromatism (SDi). The plumage score was extracted using the _Handbook of the Birds of the World_ @delhoyo2011. By scanning images of males and females in this book across multiple patches, @Dale_2015 obtained mean plumage scores from RGB values. @Dale_2015 compared their RGB scores to a dataset of reflectance measurements of Australian birds. The two datasets were correlated but the relationship was expectedly noisy **include R square of correlation**. Here we compare the @Dale_2015 data against another reflectance dataset from @Armenta_2008, which estimated sexual dichromatism as  the mean number of just noticeable differences (JNDs) between male and female plumage colour (discriminability), based on a model of bird colour vision.
 
-Alongside sexual dichromatism, @Dale_2015 compiled available data for traits such as: Body size, tropical life history, Sexual selection, Cooperative breeding and Migration. We use a phylogenetic PCA (PC1) that estimates male-biased sexual selection from a species level dataset of sexual size dimorphism, social polygyny and paternal care.
+Alongside sexual dichromatism, @Dale_2015 compiled available data for traits such as: Body size, tropical life history, Sexual selection, Cooperative breeding and Migration. As a second measure of sexual selection, we used a phylogenetic PCA (PC1) that estimates male-biased sexual selection from a species level dataset of sexual size dimorphism, social polygyny and paternal care. Higher values indicate higher size dimorphism (larger males), higher polygyny and less paternal care.
 
 ##Environmental predictors 
 
@@ -116,7 +116,7 @@ bird.values <- as.list(data.frame((bird.values)))
 **3)** Summarised the extracted data across the 1,000 points into a summary value of interest (means and se) for each species and exported that data.
 
 ```{r, eval = FALSE}
-#Obtain means
+#Obtain means per variable per species
 bird.frame <- lapply(bird.values, function(x) {as.data.frame(x)})
 bird.summary <- lapply(bird.frame, function(x) {
 (as.data.frame(apply(x,2,mean, na.rm =T )))})
@@ -135,7 +135,7 @@ colnames(bird.means) <- c("binomial","bioclim1", "bioclim2", "bioclim3", "biocli
 write.csv(bird.means, 'data/bird.means.csv')
 ```
   
-**4)** This process was repeated when we used gridded data for the LGM, LIG, NPP and human population density, while range size was obtained from the following code: 
+**4)** The process above was repeated when we used gridded data for the LGM, LIG, NPP and human population density, while range size was obtained from the following code: 
 
 ```{r, eval = FALSE}
 bird.range.size <- sapply(bird.ranges,
@@ -175,11 +175,11 @@ complete.dataframe <- read.csv('data/complete.dataframe.csv')
 complete.dataframe <- left_join(plumage.scores %>% dplyr::select(binomial, Male_plumage_score, Female_plumage_score, SDi), complete.dataframe, by = "binomial")
 ```
 
-##Spatial Variability PCAs
+##Environmental Spatial Variability PCAs
 
-To obtain estimates of spatial variability we performed PCAs of the standard errors of the bioclimatic variables (excluding seasonality in temperature and precipitation). We expect variability to increase with increased range size. To correct for this association, we took the residuals from GAM models of the relationship between PCA components and range size.
+To obtain estimates of spatial variability in environment we performed PCAs of the standard errors of the bioclimatic variables across the 1000 random points extracted per species (excluding seasonality in temperature and precipitation). We expect variability to increase with increased range size. To correct for this association, and to be able to include both variables in the model, we took the residuals from GAM models of the relationship between PCA components and range size.
 
-**Table S1:** Loadings for the first two PCs, from a PCA on the variation (standard error, where n ~ 1,000) of each bioclim variable except the standard error of temperature seasonality (se.bioclim4) and the standard error of precipitation seasonality (se.bioclim15), as these are already measures of variability and based on other bioclim variables. We use the standard error as, while we attempted to sample each species range 1,000 times, some points returned NA values and would thus affect the standard deviation, but not standard error.
+**Table S1:** Loadings for the first two PCs, from a PCA on the variation (standard error, where n ~ 1,000) of each bioclim variable except the standard error of temperature seasonality (se.bioclim4) and the standard error of precipitation seasonality (se.bioclim15), as these are already measures of variability and based on other bioclimatic variables. We use the standard error as, while we attempted to sample each species range 1,000 times, some points returned NA values and would thus affect the standard deviation, but not standard error.** mmm..SD is the sum of the distances of each point to the mean, divided by n-1, so it already takes into account whether some species have more or less points, it's like an average of distances to the mean. I think the standard way of measuring spread data is the SD more than the SE...anyway, I don't think that will change much if all Ns are very similar, but let's think about that for the publication**
 ```{r}
 restricted.data <- complete.dataframe %>% drop_na(bioclim1) #Drop species without environmental data
 PCA.bioclim <- prcomp(restricted.data[c('se.bioclim1', 'se.bioclim2', 'se.bioclim3', 'se.bioclim5', 'se.bioclim6', 'se.bioclim7', 'se.bioclim8', 'se.bioclim9', 'se.bioclim10', 'se.bioclim11', 'se.bioclim12', 'se.bioclim13', 'se.bioclim14', 'se.bioclim16', 'se.bioclim17', 'se.bioclim18', 'se.bioclim19')], #Select se.bioclim
@@ -192,8 +192,8 @@ as.data.frame(PCA.bioclim$rotation[,1:2]) %>% `colnames<-`(c("PC1", "PC2")) %>% 
 ```
 
 ```{r, fig.width=10, fig.height=5}
-#run GAM
-PC1.gam <- mgcv::gam(PC1*(-1) ~ s(log(range.size.m2)), data = restricted.data, family = "gaussian") #Inverse as the PC1 loads to the negative (COUNTER-NTUITIVE)
+#run GAM of association between range size and spatial climatic variation
+PC1.gam <- mgcv::gam(PC1*(-1) ~ s(log(range.size.m2)), data = restricted.data, family = "gaussian") #Inverse as the PC1 loads to the negative (COUNTER-INTUITIVE)
 
 #take residuals
 restricted.data$residuals.PC1 <- residuals.gam(PC1.gam) 
@@ -210,11 +210,11 @@ plot.gam(PC1.gam, residuals = T, main = 'PC1 residuls (temp)')
 plot.gam(PC2.gam, residuals = T, main = 'PC2 residuals (precip)')
 ```
   
-**Figure S1:** The relationship between spatial variability in the temperature components (PC1) and log-range size is relatively strong. The relationship between spatial variability in precipitation (PC2) and log-range size is weaker. In the analysis we only used the residuals from PC1.
+**Figure S1:** The relationship between spatial variability in the temperature components (PC1) and log-range size is relatively strong. The relationship between spatial variability in precipitation (PC2) and log-range size is weaker. In the analysis we only used the residuals from PC1. **How much % is explained by PC1??**
 
 ##Long term climate variability (LIG anomaly)
 
-To gain estimates for change in climate over the past ~130,000 years we used the difference in bioclim variables between the LIG and present values. The plots show the two PCs, broadly representing temperature and precipitation. Data is also provided for the last-glacial maximum (LGM) but was not used in the analysis.  
+Climate stability through time can potentially affect diversification dynamics. To gain estimates for change in climate over the past ~130,000 years we used the difference in bioclim variables between the LIG and present values. The plots show the two PCs, broadly representing temperature and precipitation. Data is also provided for the last-glacial maximum (LGM) but was not used in the analysis. **last sentence not needed, or otherwise explain why we chose LIG over LGM?**
 
 **Table S2:** Loadings for the first two PCs of each of the PCAs for the difference in bioclimatic variables between today and the LIG. Here, PC1 is more heavily loaded for absolute temperature difference, while PC2 is more heavily loaded for absolute difference in precipitation.  
 
@@ -324,7 +324,7 @@ pairs(restricted.data[,c("log.range.size", "bioclim4", "residuals.PC1", "PC1.LIG
   
 ##Sexual Dimorphism
 
-The sexual dimorphism dataset looks to have an over-dispersed distribution (see phylogenic plot in manuscript). Unfortunately, transformations do not greatly improve the distribution. Our model fit is expected to be reduced by this but further transformations are not obvious and would risk problems of interpretation.
+The sexual dimorphism dataset looks to have an over-dispersed distribution (see phylogenic plot in manuscript). Unfortunately, transformations do not greatly improve the distribution. Our model fit is expected to be reduced by this but further transformations are not obvious and would risk problems of interpretation. In any case, the phylogenetically corrected models we employ do not assume normality in the response variable.
 
 _______________
 
@@ -334,7 +334,7 @@ _______________
 
 We obtained two tip-rate metrics of speciation using statistics derived from the properties of the nodes and branches along root-to-tip paths of the phylogeny. Node density (ND) is a simple statistic calculating the density of nodes from the phylogenetic root-to-tip, while the diversification rate (DR) [*e.g.*, @Jetz_2012; @quintero_2018; @Rabosky_fish_2018], is derived from the sum of edge lengths branching from a node, with each more basal node having the sum of lengths down-weighted.  
 
-The functions that generate these tip rates estimates are: ``calculate.log.es``, ``calculate.nd`` and ``calculate.tb``. Here they are run on 100 trees plus a full MCC tree of passerine birds based on 2500 samples of the posterior [@Jetz_2012]. This was done using the ``phanghorn`` package [@phangorn_2010].
+The functions that generate these tip rates estimates are: ``calculate.log.es``, ``calculate.nd`` and ``calculate.tb``. Here they are run on 100 trees plus a full MCC tree of passerine birds based on 2500 sample trees of the posterior [@Jetz_2012]. This was done using the ``phanghorn`` package [@phangorn_2010].
 
 ```{r}
 #Obtain DR (log(es)) estimates, by calling the calculate.dr function
@@ -853,12 +853,12 @@ BAMM.variance <- ggExtra::ggMarginal(
 grid.newpage()
 grid.draw(BAMM.variance)
 ```
-**Figure S5:** The tip-rate estimate for BAMM are highly variable within each run of BAMM. Across most species there is high variability in the posterior distribution of tip-rate estimates. Here we show mean values, weights based on the variance and 50 % CIs. 
+**Figure S6:** **this changes to S6 and next to S7 etc**The tip-rate estimates for BAMM are highly variable within each run of BAMM. Across most species there is high variability in the posterior distribution of tip-rate estimates. Here we show mean values, weights based on the variance and 50 % CIs. 
 
 
 ###Analysis of BAMM results
 
-Given the high variability in tip-rate estimates from the above plot, below we peform some diagnostics on BAMM to demonstrate that the variability is unlikely an error in sampling or parameters, rather an inherent aspect of BAMM. The following is not inherently necessary to understand the conclusions drawn from the paper, however they do raise a set of methodological questions about BAMM that warrant further investigation.
+Given the high variability in tip-rate estimates from the above plot, below we peformed some diagnostics on BAMM to demonstrate that the variability is unlikely an error in sampling or parameters, rather an inherent aspect of BAMM. The following is not inherently necessary to understand the conclusions drawn from the paper, however they do raise a set of methodological questions about BAMM that warrant further investigation.
 
 ####Credible number of shifts
 
@@ -872,7 +872,7 @@ css <- credibleShiftSet(MCC.BAMM.ED, expectedNumberOfShifts=100, threshold=5, se
 summary(css)
 ```
 
-Notably, each of the top shifts has low probability, indicating that out of the entire posterior sample we cannot differentiate which shift configuration is more likely. Based on the following estimates of the BayesFactor, we are convinced that the number of shifts is non-zero, however it is still quite a wide distribution.  
+Notably, each of the top shifts has low probability, indicating that out of the entire posterior sample we cannot differentiate which shift configuration is more likely. Based on the following estimates of the BayesFactor, we are confident that the number of shifts is non-zero, however it is still quite a wide distribution.  
 
 ```{r} 
 round(computeBayesFactors(MCC.BAMM.mcmc, expectedNumberOfShifts=100, burnin=0.1)[,1], digits = 2)
@@ -881,7 +881,7 @@ round(computeBayesFactors(MCC.BAMM.mcmc, expectedNumberOfShifts=100, burnin=0.1)
 ```{r, fig.width = 8, fig.height = 5}
 plotPrior(MCC.BAMM.mcmc, expectedNumberOfShifts=100)
 ```
-**Figure S6:** The apparent convergence of the number of shifts in the posterior is at odds with the variability seen in the CSS and although there is greater certainty in the number of shifts being within the range above, the position of those shifts remains variable.  
+**Figure S7:** The apparent convergence of the number of shifts in the posterior is at odds with the variability seen in the CSS and although there is greater certainty in the number of shifts being within the range above, the position of those shifts remains variable.  
 
 We can compare our run of BAMM against @Harvey_2017 who used BAMM on a genetic-only MCC tree with different parameters.  
 
@@ -915,7 +915,7 @@ Harvey.BAMM.df %>% ggplot(aes(x = mean.lambda, y = mean.mu,
 #   fill = '#BA3B1C91'
 # )
 ```
-**Figure S7:** Based on the event data from the BAMM run by @Harvey_2017 we find that in both our case and theirs the tip-rate estimates for many species are extrememly variable. here we present mean estimates with 50 % CIs.
+**Figure S8:** Based on the event data from the BAMM run by @Harvey_2017 we find that in both our case and theirs the tip-rate estimates for many species are extremely variable across samples of the posterior probability. Here we present mean estimates with 50 % CIs.
   
 <!-- ###Time-constant -->
 
@@ -3107,7 +3107,7 @@ coef_plot(best_model, error_bar = "ci", reverse_order = TRUE) +
   ggplot2::theme_minimal()
 ```
 
-**Figure S13:** Path analysis standardised regression coefficients vary across relationships. Error bars are derived from confidence intervals through 500 bootstrapped iterations. Paths with error bars not overlapping zero are presented with an astericks in Figure 3 within the manuscript.  
+**Figure S13:** Path analysis  standardised regression coefficients vary across relationships. Error bars are derived from confidence intervals through 500 bootstrapped iterations. Paths with error bars not overlapping zero are presented with an astericks in Figure 3 within the manuscript.  
 
 #Additional Figures and Tables
 
