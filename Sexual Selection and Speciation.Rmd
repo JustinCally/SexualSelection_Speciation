@@ -83,7 +83,7 @@ Rather than obtaining one estimate of speciation rate from one tree, we ran BAMM
 
 The first proxy for sexual selection that we used was based on measures of sexual dichromatism. We used two existing datasets; a complete set of male and female plumage scores in Passerines from @Dale_2015 and reflectance data from 1000 birds from @Armenta_2008.
 
-Briefly, @Dale_2015 obtained male and female plumage score, the ratio of which provides an index of sexual dichromatism (SDi). The plumage score was extracted using the _Handbook of the Birds of the World_ @delhoyo2011. By scanning images of males and females in this book across multiple patches, @Dale_2015 obtained mean plumage scores from RGB values. @Dale_2015 compared their RGB scores to a dataset of reflectance measurements of Australian birds. The two datasets were correlated but the relationship was expectedly noisy **include R square of correlation**. Here we compare the @Dale_2015 data against another reflectance dataset from @Armenta_2008, which estimated sexual dichromatism as  the mean number of just noticeable differences (JNDs) between male and female plumage colour (discriminability), based on a model of bird colour vision.
+Briefly, @Dale_2015 obtained male and female plumage score, the ratio of which provides an index of sexual dichromatism (SDi). The plumage score was extracted using the _Handbook of the Birds of the World_ @delhoyo2011. By scanning images of males and females in this book across multiple patches, @Dale_2015 obtained mean plumage scores from RGB values. @Dale_2015 compared their RGB scores to a dataset of reflectance measurements of Australian birds. The two datasets were correlated but the relationship was expectedly noisy (*R^2^* = 0.67). Here we compare the @Dale_2015 data against another reflectance dataset from @Armenta_2008, which estimated sexual dichromatism as the mean number of just noticeable differences (JNDs) between male and female plumage colour (discriminability), based on a model of bird colour vision.
 
 Alongside sexual dichromatism, @Dale_2015 compiled available data for traits such as: Body size, tropical life history, Sexual selection, Cooperative breeding and Migration. As a second measure of sexual selection, we used a phylogenetic PCA (PC1) that estimates male-biased sexual selection from a species level dataset of sexual size dimorphism, social polygyny and paternal care. Higher values indicate higher size dimorphism (larger males), higher polygyny and less paternal care.
 
@@ -179,7 +179,7 @@ complete.dataframe <- left_join(plumage.scores %>% dplyr::select(binomial, Male_
 
 To obtain estimates of spatial variability in environment we performed PCAs of the standard errors of the bioclimatic variables across the 1000 random points extracted per species (excluding seasonality in temperature and precipitation). We expect variability to increase with increased range size. To correct for this association, and to be able to include both variables in the model, we took the residuals from GAM models of the relationship between PCA components and range size.
 
-**Table S1:** Loadings for the first two PCs, from a PCA on the variation (standard error, where n ~ 1,000) of each bioclim variable except the standard error of temperature seasonality (se.bioclim4) and the standard error of precipitation seasonality (se.bioclim15), as these are already measures of variability and based on other bioclimatic variables. We use the standard error as, while we attempted to sample each species range 1,000 times, some points returned NA values and would thus affect the standard deviation, but not standard error.** mmm..SD is the sum of the distances of each point to the mean, divided by n-1, so it already takes into account whether some species have more or less points, it's like an average of distances to the mean. I think the standard way of measuring spread data is the SD more than the SE...anyway, I don't think that will change much if all Ns are very similar, but let's think about that for the publication**
+**Table S1:** Loadings for the first two PCs, from a PCA on the variation (standard error, where n ~ 1,000) of each bioclim variable except the standard deviation of temperature seasonality (sd.bioclim4) and the standard error of precipitation seasonality (sd.bioclim15), as these are already measures of variability and based on other bioclimatic variables.
 ```{r}
 restricted.data <- complete.dataframe %>% drop_na(bioclim1) #Drop species without environmental data
 PCA.bioclim <- prcomp(restricted.data[c('se.bioclim1', 'se.bioclim2', 'se.bioclim3', 'se.bioclim5', 'se.bioclim6', 'se.bioclim7', 'se.bioclim8', 'se.bioclim9', 'se.bioclim10', 'se.bioclim11', 'se.bioclim12', 'se.bioclim13', 'se.bioclim14', 'se.bioclim16', 'se.bioclim17', 'se.bioclim18', 'se.bioclim19')], #Select se.bioclim
@@ -210,11 +210,11 @@ plot.gam(PC1.gam, residuals = T, main = 'PC1 residuls (temp)')
 plot.gam(PC2.gam, residuals = T, main = 'PC2 residuals (precip)')
 ```
   
-**Figure S1:** The relationship between spatial variability in the temperature components (PC1) and log-range size is relatively strong. The relationship between spatial variability in precipitation (PC2) and log-range size is weaker. In the analysis we only used the residuals from PC1. **How much % is explained by PC1??**
+**Figure S1:** The relationship between spatial variability in the temperature components (PC1) and log-range size is relatively strong. The relationship between spatial variability in precipitation (PC2) and log-range size is weaker. In the analysis we only used the residuals from PC1. PC1 accounts for 48.1 % of the variation.
 
 ##Long term climate variability (LIG anomaly)
 
-Climate stability through time can potentially affect diversification dynamics. To gain estimates for change in climate over the past ~130,000 years we used the difference in bioclim variables between the LIG and present values. The plots show the two PCs, broadly representing temperature and precipitation. Data is also provided for the last-glacial maximum (LGM) but was not used in the analysis. **last sentence not needed, or otherwise explain why we chose LIG over LGM?**
+Climate stability through time can potentially affect diversification dynamics. To gain estimates for change in climate over the past ~130,000 years we used the difference in bioclim variables between the LIG and present values. The plots show the two PCs, broadly representing temperature and precipitation. We used the difference between the present and LIG climates as these represent a longer (evolutionarily meaningful) time-scale than the difference between the LGM and present climates.
 
 **Table S2:** Loadings for the first two PCs of each of the PCAs for the difference in bioclimatic variables between today and the LIG. Here, PC1 is more heavily loaded for absolute temperature difference, while PC2 is more heavily loaded for absolute difference in precipitation.  
 
@@ -853,7 +853,7 @@ BAMM.variance <- ggExtra::ggMarginal(
 grid.newpage()
 grid.draw(BAMM.variance)
 ```
-**Figure S6:** **this changes to S6 and next to S7 etc**The tip-rate estimates for BAMM are highly variable within each run of BAMM. Across most species there is high variability in the posterior distribution of tip-rate estimates. Here we show mean values, weights based on the variance and 50 % CIs. 
+**Figure S6:** The tip-rate estimates for BAMM are highly variable within each run of BAMM. Across most species there is high variability in the posterior distribution of tip-rate estimates. Here we show mean values, weights based on the variance and 50 % CIs. 
 
 
 ###Analysis of BAMM results
@@ -1666,7 +1666,7 @@ grid.arrange(
   nrow = 1
 )
 ```
-**Figure S8:** This figure is the same basic figure as seen in the manuscript (Figure 1). It provides model estimates for four response variables across 100 random trees alongside the MCC tree.
+**Figure S9:** This figure is the same basic figure as seen in the manuscript (Figure 1). It provides model estimates for four response variables across 100 random trees alongside the MCC tree.
 
 **Table S7:** The estimates of the MCC models plotted above are based on the following data tables.
 ```{r}
@@ -1794,7 +1794,7 @@ ggExtra::ggMarginal(
 )
 ```
 
-**Figure S9:** There is a correlation between the RGB measures and the Spectophotometry measures. The RGB measures seem to be more noisy around the lower values.  
+**Figure S10:** There is a correlation between the RGB measures and the Spectophotometry measures. The RGB measures seem to be more noisy around the lower values.  
 
 R-squared and correlation for relationship between RGB and Spectrophotometry Data:
 ```{r}
@@ -2333,7 +2333,7 @@ grid.arrange(symmetrise_scale(Armenta.DR.plot, "x"),
              symmetrise_scale(Armenta.Mu.plot, "x"), 
              nrow = 1)
 ```
-**Figure S10:** Measures of sexual dichromatism using spectrophotometry do not change the main patterns. This dataset is a subset of the complete dataset (n = 581), thus drawing conclusions for the other predictors (*e.g.* borderline long term temperature variation and spatial temperature variation) potentially risks type I error. Additionally, these environmental predictors were not measured differently in this analysis compared to the analysis using RGB measures of dichromatism for all species so we refrain from drawing conclusions on the effects of the environmental predictors based on this smaller dataset.
+**Figure S11:** Measures of sexual dichromatism using spectrophotometry do not change the main patterns. This dataset is a subset of the complete dataset (n = 581), thus drawing conclusions for the other predictors (*e.g.* borderline long term temperature variation and spatial temperature variation) potentially risks type I error. Additionally, these environmental predictors were not measured differently in this analysis compared to the analysis using RGB measures of dichromatism for all species so we refrain from drawing conclusions on the effects of the environmental predictors based on this smaller dataset.
 
 **Table S11:** MCC estimates from the above plot are presented as numerical values below. 
 ```{r}
@@ -2411,7 +2411,7 @@ SS.subset %>% ggplot(aes(x = SDi, y = Sexual_selection_ppca))+
   geom_smooth(method = "lm")+
   theme_minimal()
 ```
-**Figure S11:** The relationship between absolute sexual dichromatism and male-baised sexual selection. Although positively correlated, the distribution is very noisy with some species having high sexual dichromatism and low male-biased sexual selection and vice versa. 
+**Figure S12:** The relationship between absolute sexual dichromatism and male-baised sexual selection. Although positively correlated, the distribution is very noisy with some species having high sexual dichromatism and low male-biased sexual selection and vice versa. 
 
 ```{r}
 data_frame(
@@ -2975,7 +2975,7 @@ grid.arrange(symmetrise_scale(Subset.DR.plot, "x"),
              symmetrise_scale(Subset.Mu.plot, "x"), 
              nrow = 1)
 ```
-**Figure S12:** PGLS analyses using measures of male-biased sexual selection (*n* = 2,465) using three measures of speciation ($\lambda_{DR}$, $\lambda_{ND}$, $\lambda_{BAMM}$) and one measure of extinction ($\mu_{BAMM}$) as response variables. The numerical values for the model estimates using the MCC tree and HPD intervals of estimates from 100 random trees can be found in the ESM. Density curves are based on estimates from 100 trees and the circle below with error bars is the estimate and 95 % CIs from the MCC tree. For this figure we removed outliers from estimates coming from the 100 random trees for BAMM models in order to interpret the MCC 95 % CIs. This figure is part **b** of Figure 1 within the manuscript.  n
+**Figure S13:** PGLS analyses using measures of male-biased sexual selection (*n* = 2,465) using three measures of speciation ($\lambda_{DR}$, $\lambda_{ND}$, $\lambda_{BAMM}$) and one measure of extinction ($\mu_{BAMM}$) as response variables. The numerical values for the model estimates using the MCC tree and HPD intervals of estimates from 100 random trees can be found in the ESM. Density curves are based on estimates from 100 trees and the circle below with error bars is the estimate and 95 % CIs from the MCC tree. For this figure we removed outliers from estimates coming from the 100 random trees for BAMM models in order to interpret the MCC 95 % CIs. This figure is part **b** of Figure 1 within the manuscript.
 
 **Table S14:** MCC model estimates from the above model are presented here as numberical values with 95 % CIs.
 ```{r}
@@ -3107,7 +3107,7 @@ coef_plot(best_model, error_bar = "ci", reverse_order = TRUE) +
   ggplot2::theme_minimal()
 ```
 
-**Figure S13:** Path analysis  standardised regression coefficients vary across relationships. Error bars are derived from confidence intervals through 500 bootstrapped iterations. Paths with error bars not overlapping zero are presented with an astericks in Figure 3 within the manuscript.  
+**Figure S14:** Path analysis  standardised regression coefficients vary across relationships. Error bars are derived from confidence intervals through 500 bootstrapped iterations. Paths with error bars not overlapping zero are presented with an astericks in Figure 3 within the manuscript.  
 
 #Additional Figures and Tables
 
@@ -3138,7 +3138,7 @@ BAMM.Lambda.100Trees %>% ggplot(aes(x = DR.Lambda.100Trees$DR, y = mean.lambda, 
 # mean(DR.Lambda.100Trees$sd)
 # mean(BAMM.Lambda.100Trees$sd)
 ```
-**Figure S14:** Speciation Rate means from 100 trees using either the DR statistic (x axis) or BAMM (y axis). While there is a clear correlation (*r* = `r round(cor(all.trees.join$DR, all.trees.join$mean.lambda), digits = 2)`) there is variability with BAMM showing less heterogeneity. 95 % CIs are plotted for both axis from the 100 trees. Each point represents a species (*n* = 5,965).
+**Figure S15:** Speciation Rate means from 100 trees using either the DR statistic (x axis) or BAMM (y axis). While there is a clear correlation (*r* = `r round(cor(all.trees.join$DR, all.trees.join$mean.lambda), digits = 2)`) there is variability with BAMM showing less heterogeneity. 95 % CIs are plotted for both axis from the 100 trees. Each point represents a species (*n* = 5,965).
 
 ```{r, echo = F}
 MCC.BAMM.model.data <- readRDS('data/MCC.BAMM.model.data.rds')
@@ -3159,7 +3159,7 @@ restricted.data %>% ggplot(aes(x = MCC.DR, y = MCC.BAMM.model.data$mean.lambda, 
   scale_fill_viridis_c()
   
 ```
-**Figure S15:** Similar to Figure S14, there is a correlation (*r* = `r round(cor(MCC.tree.join$MCC.DR, MCC.tree.join$mean.lambda), digits = 2)`) between $\lambda_{DR}$ and $\lambda_{BAMM}$ with BAMM results showing less heterogeneity. Each point represents a species (*n* = 5,965).
+**Figure S16:** Similar to Figure S14, there is a correlation (*r* = `r round(cor(MCC.tree.join$MCC.DR, MCC.tree.join$mean.lambda), digits = 2)`) between $\lambda_{DR}$ and $\lambda_{BAMM}$ with BAMM results showing less heterogeneity. Each point represents a species (*n* = 5,965).
 
 
 ```{r, eval = T, echo = F, results='hide', warning=F}
