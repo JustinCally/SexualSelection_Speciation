@@ -107,19 +107,19 @@ bird.points <- lapply(bird.ranges,
                        function(x) {spsample(x, n=1000, type="random", iter = 30)})
 ```
   
-**2)** Extracted the bioclim or other (e.g. NPP) data from each of the points:
+**2)** Extracted the bioclim or other (*e.g.* NPP) data from each of the points:
 ```{r, eval = FALSE}
 bird.values <- lapply(bird.points, function(x) {raster::extract(bioclim_data, x)})
 bird.values <- as.list(data.frame((bird.values)))
 ```
   
-**3)** Summarised the extracted data across the 1,000 points into a summary value of interest (means and se) for each species and exported that data.
+**3)** Summarised the extracted data across the 1,000 points into a summary value of interest (means and sd) for each species and exported that data.
 
 ```{r, eval = FALSE}
 #Obtain means per variable per species
 bird.frame <- lapply(bird.values, function(x) {as.data.frame(x)})
 bird.summary <- lapply(bird.frame, function(x) {
-(as.data.frame(apply(x,2,mean, na.rm =T )))})
+(as.data.frame(apply(x,2,mean, na.rm =T)))})
 
 #transpose
 bird.means <- t(as.data.frame(bird.summary))
@@ -3107,7 +3107,9 @@ coef_plot(best_model, error_bar = "ci", reverse_order = TRUE) +
   ggplot2::theme_minimal()
 ```
 
-**Figure S14:** Path analysis  standardised regression coefficients vary across relationships. Error bars are derived from confidence intervals through 500 bootstrapped iterations. Paths with error bars not overlapping zero are presented with an astericks in Figure 3 within the manuscript.  
+**Figure S14:** Path analysis  standardised regression coefficients vary across relationships. Error bars are derived from confidence intervals through 500 bootstrapped iterations. Paths with error bars not overlapping zero are presented with an asterisks in Figure 3 within the manuscript.  
+
+_______________
 
 #Additional Figures and Tables
 
