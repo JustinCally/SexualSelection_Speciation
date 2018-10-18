@@ -182,7 +182,7 @@ To obtain estimates of spatial variability in environment we performed PCAs of t
 **Table S1:** Loadings for the first two PCs, from a PCA on the variation (standard error, where n ~ 1,000) of each bioclim variable except the standard deviation of temperature seasonality (sd.bioclim4) and the standard error of precipitation seasonality (sd.bioclim15), as these are already measures of variability and based on other bioclimatic variables.
 ```{r}
 restricted.data <- complete.dataframe %>% drop_na(bioclim1) #Drop species without environmental data
-PCA.bioclim <- prcomp(restricted.data[c('se.bioclim1', 'se.bioclim2', 'se.bioclim3', 'se.bioclim5', 'se.bioclim6', 'se.bioclim7', 'se.bioclim8', 'se.bioclim9', 'se.bioclim10', 'se.bioclim11', 'se.bioclim12', 'se.bioclim13', 'se.bioclim14', 'se.bioclim16', 'se.bioclim17', 'se.bioclim18', 'se.bioclim19')], #Select se.bioclim
+PCA.bioclim <- prcomp(restricted.data[c('sd.bioclim1', 'sd.bioclim2', 'sd.bioclim3', 'sd.bioclim5', 'sd.bioclim6', 'sd.bioclim7', 'sd.bioclim8', 'sd.bioclim9', 'sd.bioclim10', 'sd.bioclim11', 'sd.bioclim12', 'sd.bioclim13', 'sd.bioclim14', 'sd.bioclim16', 'sd.bioclim17', 'sd.bioclim18', 'sd.bioclim19')], #Select sd.bioclim
                       scale = TRUE, center = TRUE)
 PCA.predictions <- predict(PCA.bioclim)
 restricted.data <- cbind(restricted.data, PCA.predictions)
@@ -338,7 +338,7 @@ The functions that generate these tip rates estimates are: ``calculate.log.es``,
 
 ```{r}
 #Obtain DR (log(es)) estimates, by calling the calculate.dr function
-passerine.trees <- read.nexus('bamm_extinction/data/trees/Passerine_Trees_Full.nex')
+passerine.trees <- read.nexus('data/trees/Passerine_Trees_Full.nex')
 
 #DR, ND and TB can be calculated on the 100 trees by: 
   

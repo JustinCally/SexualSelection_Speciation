@@ -39,6 +39,7 @@ data/BAMM_MCC/
 Figures/
 bamm_extinction/data/bamm_files/
 bamm_extinction/data/full_passerines/
+data/trees/
 
 #Big files (just in case): Use: find ./* -size +100M | cat >> .gitignore
 ./Figures/BigSpeciationPlot.psd
