@@ -17,7 +17,7 @@ header-includes: \usepackage{microtype} \usepackage[all]{hypcap} \usepackage{ams
   \postdate{\par\end{flushleft}} \usepackage{fancyhdr} \pagestyle{fancy} \fancyhead[LO,LE]{\textsl{\leftmark}}
   \rhead[]{Sexual selection predicts speciation} \usepackage[noabbrev,capitalise]{cleveref}
   \usepackage{titlefoot} \usepackage{amssymb} \usepackage{rotating} \usepackage{lineno}
-  \linenumbers \usepackage{setspace}\onehalfspacing \usepackage[font={small}]{caption}
+  \nolinenumbers \usepackage{setspace}\onehalfspacing \usepackage[font={small}]{caption}
   \usepackage{epigraph} \setlength\epigraphwidth{5.25in} \setlength\epigraphrule{0pt}
   \setlength\beforeepigraphskip{1\baselineskip} \setlength\afterepigraphskip{2\baselineskip}
   \renewcommand*{\textflush}{flushright} \renewcommand*{\epigraphsize}{\footnotesize\itshape} 
@@ -25,7 +25,7 @@ header-includes: \usepackage{microtype} \usepackage[all]{hypcap} \usepackage{ams
   \titleformat{\subsection}{\normalfont\Large}{\thesubsection}{1em}{} \titleformat{\subsubsection}{\normalfont\large}{\thesubsubsection}{1em}{}
   \usepackage{abstract} \renewcommand{\abstractnamefont}{\normalfont\Large} 
   \usepackage[hang, flushmargin]{footmisc} 
-  \usepackage{hyperref}\hypersetup{colorlinks=true, hyperfootnotes=false, linkcolor=blue, filecolor=blue, urlcolor=blue}
+  \usepackage{hyperref}\hypersetup{colorlinks=false, hyperfootnotes=false, linkcolor=blue, filecolor=blue, urlcolor=blue}
   \usepackage{xcolor} \renewcommand\thefootnote{\textcolor{black}{\arabic{footnote}}}
   \raggedbottom
 csl: References/evolution.csl

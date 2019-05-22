@@ -16,7 +16,7 @@ subtitle: Supplementary Material
 bibliography: References/SS_Extinction.bib
 ---
 
-```{r, message=FALSE, warning=FALSE}
+```{r setup, message=FALSE, warning=FALSE}
 library(ggplot2)
 library(pander)
 library(knitr)
@@ -52,6 +52,7 @@ library(RColorBrewer)
 library(tibble)
 library(stargazer)
 library(ggraph)
+library(stringr)
 #devtools::install_github("Ax3man/phylopath")
 library(phylopath)
 library("EBImage") # for images
@@ -63,9 +64,6 @@ source("functions/Vdodge_function.R")
 source('functions/symmetrise_scale.R')
 source('functions/Correlation_matrix.R')
 source('functions/gheatmap2.R') #Gets rid of spaces between tiles
-```
-
-```{r setup, include=FALSE}
 knitr::opts_chunk$set(cache=TRUE)
 ```
 
@@ -1122,84 +1120,157 @@ MCC.ND.top <- gls(MCC.ND ~ SDi
 saveRDS(MCC.ND.top, 'data/MCC.ND.top.rds')
 #Run the 100 models for DR and ND using the best model:
 
-#Take the restricted data and make it simpler with just responses and predictors.Note that we join the es.values for the 100 trees
-DR.model.data <- lapply(es.list, function(x) { #es.list is a list of ES values calculated earlier
-  left_join(restricted.data %>% dplyr::select(binomial, TipLabel, SDi, range.size.m2, bioclim4, residuals.PC1, PC1.LIG, NPP), 
-            x %>% as.data.frame() %>% tibble::rownames_to_column() %>% `colnames<-`(c("TipLabel", "ES")), 
-            by = "TipLabel")
-})
 
-#PGLS needs tiplabel as rowname
-DR.model.data <- lapply(DR.model.data, function(x) {
-  tibble::column_to_rownames(x, "TipLabel")})
+# No longer used now that we use 1000 trees
 
-#Prune the trees
-pruned.trees<-lapply(passerine.trees, function(x) {
-  drop.tip(x,x$tip.label[-match(restricted.data$TipLabel, x$tip.label)])
-})
-
-#Use mapply to create a list of PGLS global models
-DR.pgls.models <- mcmapply(function(x,y) {
-  gls(ES ~ SDi 
-         + log(range.size.m2)
-         + bioclim4 #Seasonal variation
-         + residuals.PC1 #Spatial variation
-         + PC1.LIG #Long-term climate variation
-         + NPP,
-    corPagel(0.985, phy = y, fixed = TRUE), 
-    data = x, 
-    method = "REML")
-}, x = DR.model.data, y = pruned.trees,
-SIMPLIFY = FALSE, #Prevents the catastrophic loss of structure, names and attributes
-mc.cores = 8) #Specify core number 
-
-saveRDS(DR.pgls.models, "data/DR.pgls.models.rds")
-
-#Now for Node Density:
-ND.model.data <- lapply(nd.list, function(x) {
-  left_join(restricted.data %>% dplyr::select(binomial, TipLabel, SDi, range.size.m2, bioclim4, residuals.PC1, PC1.LIG, NPP), 
-            x %>% as.data.frame() %>% tibble::rownames_to_column() %>% `colnames<-`(c("TipLabel", "ND")), 
-            by = "TipLabel")
-})
-
-#PGLS needs tiplabel as rowname
-ND.model.data <- lapply(ND.model.data, function(x) {
-  tibble::column_to_rownames(x, "TipLabel")})
-
-#Use mapply to create a list of PGLS global models
-ND.pgls.models <- mcmapply(function(x,y) {
-gls(ND ~ SDi 
-         + log(range.size.m2)
-         + bioclim4 #Seasonal variation
-         + residuals.PC1 #Spatial variation
-         + PC1.LIG #Long-term climate variation
-         + NPP,
-    corPagel(0.9996, phy = y, fixed = TRUE), 
-    data = x, 
-    method = "REML")
-}, x = ND.model.data, y = pruned.trees, 
-SIMPLIFY = FALSE, #Prevents the catastrophic loss of structure, names and attributes
-mc.cores = 8) #Specify core number 
-
-saveRDS(ND.pgls.models, "data/ND.pgls.models.rds")
+# #Take the restricted data and make it simpler with just responses and predictors.Note that we join the es.values for the 100 trees
+# DR.model.data <- lapply(es.list, function(x) { #es.list is a list of ES values calculated earlier
+#   left_join(restricted.data %>% dplyr::select(binomial, TipLabel, SDi, range.size.m2, bioclim4, residuals.PC1, PC1.LIG, NPP), 
+#             x %>% as.data.frame() %>% tibble::rownames_to_column() %>% `colnames<-`(c("TipLabel", "ES")), 
+#             by = "TipLabel")
+# })
+# 
+# #PGLS needs tiplabel as rowname
+# DR.model.data <- lapply(DR.model.data, function(x) {
+#   tibble::column_to_rownames(x, "TipLabel")})
+# 
+# #Prune the trees
+# pruned.trees<-lapply(passerine.trees, function(x) {
+#   drop.tip(x,x$tip.label[-match(restricted.data$TipLabel, x$tip.label)])
+# })
+# 
+# #Use mapply to create a list of PGLS global models
+# DR.pgls.models <- mcmapply(function(x,y) {
+#   gls(ES ~ SDi 
+#          + log(range.size.m2)
+#          + bioclim4 #Seasonal variation
+#          + residuals.PC1 #Spatial variation
+#          + PC1.LIG #Long-term climate variation
+#          + NPP,
+#     corPagel(0.985, phy = y, fixed = TRUE), 
+#     data = x, 
+#     method = "REML")
+# }, x = DR.model.data, y = pruned.trees,
+# SIMPLIFY = FALSE, #Prevents the catastrophic loss of structure, names and attributes
+# mc.cores = 8) #Specify core number 
+# 
+# saveRDS(DR.pgls.models, "data/DR.pgls.models.rds")
+# 
+# #Now for Node Density:
+# ND.model.data <- lapply(nd.list, function(x) {
+#   left_join(restricted.data %>% dplyr::select(binomial, TipLabel, SDi, range.size.m2, bioclim4, residuals.PC1, PC1.LIG, NPP), 
+#             x %>% as.data.frame() %>% tibble::rownames_to_column() %>% `colnames<-`(c("TipLabel", "ND")), 
+#             by = "TipLabel")
+# })
+# 
+# #PGLS needs tiplabel as rowname
+# ND.model.data <- lapply(ND.model.data, function(x) {
+#   tibble::column_to_rownames(x, "TipLabel")})
+# 
+# #Use mapply to create a list of PGLS global models
+# ND.pgls.models <- mcmapply(function(x,y) {
+# gls(ND ~ SDi 
+#          + log(range.size.m2)
+#          + bioclim4 #Seasonal variation
+#          + residuals.PC1 #Spatial variation
+#          + PC1.LIG #Long-term climate variation
+#          + NPP,
+#     corPagel(0.9996, phy = y, fixed = TRUE), 
+#     data = x, 
+#     method = "REML")
+# }, x = ND.model.data, y = pruned.trees, 
+# SIMPLIFY = FALSE, #Prevents the catastrophic loss of structure, names and attributes
+# mc.cores = 8) #Specify core number 
+# 
+# saveRDS(ND.pgls.models, "data/ND.pgls.models.rds")
 ```
 
   
-From these models we obtained a distribution of the estimates for the models alongside the 95 % CIs of the MCC model. This enabled us to show the variation between trees, and the variation associated with the top MCC model. 
+From these models we obtained a distribution of the estimates for the models alongside the 95 % CIs of the MCC model. This enabled us to show the variation between trees, and the variation associated with the top MCC model. Given the variability across trees we ran 1000 ND and DR models, each allowed to estimate a phylogenetic signal ($\lambda$). The models were saved as an `.rds` object and read back into R with key coefficients extracted. Below we provide the code for this: 
+
+```{r, eval = F}
+##########################################################
+####### Read in DR models and extract estimates: #########
+##########################################################
+
+#We ran DR and ND models on 1000 trees
+files.DR.SD <- list.files(path = "/Users/justincally/Dropbox/Runs Spartan/DR_SD/", pattern = "\\.rds$", full.names = TRUE) #1000 models
+df <- list()
+lapply(files.DR.SD, function(x) {
+  tryCatch({
+  model.x <- readRDS(x)
+  name.x <- str_sub(x, -19, -5)
+  df[[name.x]] <<- data.frame(model.x$coefficients,
+                              confint(model.x),
+                              coef(summary(model.x))[,2], #Std.Error
+                              coef(summary(model.x))[,3], #t-val
+                              coef(summary(model.x))[,4], #pval
+                              model.x[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = name.x) %>% tibble::rownames_to_column()
+  rm(model.x)
+  gc(verbose = FALSE)
+  },
+  error = function(e) NULL
+  )
+})
+DR.pgls.summary <- bind_rows(df) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name"))
+#saveRDS(DR.pgls.summary, "data/DR.pgls.summary.rds") #Save a simple df with the model and coeff
+
+##########################################################
+####### Read in ND models and extract estimates: #########
+##########################################################
+
+files.ND.SD <- list.files(path = "/Users/justincally/Dropbox/Runs Spartan/ND_SD/", pattern = "\\.rds$", full.names = TRUE) #1000 models
+df <- list()
+lapply(files.ND.SD, function(x) {
+  tryCatch({
+  model.x <- readRDS(x) 
+  name.x <- str_sub(x, -19, -5)
+  df[[name.x]] <<- data.frame(model.x$coefficients, 
+                              confint(model.x), 
+                              coef(summary(model.x))[,2], #Std.Error
+                              coef(summary(model.x))[,3], #t-val
+                              coef(summary(model.x))[,4], #pval
+                              model.x[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = name.x) %>% tibble::rownames_to_column()
+  rm(model.x)
+  gc(verbose = FALSE)
+  },
+  error = function(e) NULL
+  )
+})
+ND.pgls.summary <- bind_rows(df) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name"))
+#saveRDS(ND.pgls.summary, "data/ND.pgls.summary.rds") #Save a simple df with the model and coeff
+```
+
 
 ```{r, fig.height = 8, fig.width = 4, message = FALSE, warning = FALSE}
-DR.pgls.models <- readRDS("data/DR.pgls.models.rds")
+#Read in the 1000 tree summary df and the MCC tree model
+DR.pgls.summary <- readRDS("data/DR.pgls.summary.rds")
 MCC.DR.top <- readRDS('data/MCC.DR.top.rds')
+MCC.DR.summary <-  data.frame(MCC.DR.top$coefficients,
+                              confint(MCC.DR.top),
+                              coef(summary(MCC.DR.top))[,2], #Std.Error
+                              coef(summary(MCC.DR.top))[,3], #t-val
+                              coef(summary(MCC.DR.top))[,4], #pval
+                              MCC.DR.top[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = "MCC_model") %>% 
+  tibble::rownames_to_column() %>% 
+  `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name"))
 
-DR.pgls.summary <- lapply(DR.pgls.models, function(x) {
-  data.frame(x$coefficients, confint(x)) %>% tibble::rownames_to_column()
-})
+#Now plot this for Node Density (ND):  
 
-MCC.DR.summary <- data.frame(MCC.DR.top$coefficients, confint(MCC.DR.top)) %>% tibble::rownames_to_column()
-
-DR.pgls.summary <- bind_rows(DR.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
-
-colnames(MCC.DR.summary) <- c("Parameter", "Estimate", "LCI", "UCI")
+ND.pgls.summary <- readRDS("data/ND.pgls.summary.rds")
+MCC.ND.top <- readRDS('data/MCC.ND.top.rds')
+MCC.ND.summary <- data.frame(MCC.ND.top$coefficients,
+                              confint(MCC.ND.top),
+                              coef(summary(MCC.ND.top))[,2], #Std.Error
+                              coef(summary(MCC.ND.top))[,3], #t-val
+                              coef(summary(MCC.ND.top))[,4], #pval
+                              MCC.ND.top[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = "MCC_model") %>% 
+  tibble::rownames_to_column() %>% 
+  `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name"))
 
 parameter_names <- c(
                     `bioclim4` = "Temperature Seasonality",
@@ -1210,11 +1281,14 @@ parameter_names <- c(
                     `SDi` = "Sexual Dichromatism"
                     )
 
+
+
 DR.plot <-DR.pgls.summary %>% filter(Parameter != "(Intercept)") %>% 
   ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
   geom_density(aes(y = ..scaled..),
                position = position_nudge(y= 0.6))+
-  geom_jitter(shape = 21, alpha = 0.5, size = 0.75)+
+  #geom_errorbarh(aes(xmin = LCI, xmax = UCI, colour = Parameter), position = position_jitter(seed = 1), height = 0)+
+  geom_point(shape = 21, alpha = 0.5, size = 0.75, position = position_jitter(seed = 1))+
   geom_vline(xintercept = 0)+
   theme_minimal()+
   theme(axis.text.y = element_blank(),
@@ -1242,23 +1316,6 @@ DR.plot <- DR.plot + geom_errorbarh(data = MCC.DR.summary %>% filter(Parameter !
         plot.margin=unit(c(.5,.5,.5,.5),"cm"))+
   ggtitle("DR Models")
 
-
-
-
-#Now plot this for Node Density (ND):  
-
-ND.pgls.models <- readRDS("data/ND.pgls.models.rds")
-MCC.ND.top <- readRDS('data/MCC.ND.top.rds')
-
-ND.pgls.summary <- lapply(ND.pgls.models, function(x) {
-  data.frame(x$coefficients, confint(x)) %>% tibble::rownames_to_column()
-})
-
-MCC.ND.summary <- data.frame(MCC.ND.top$coefficients, confint(MCC.ND.top)) %>% tibble::rownames_to_column()
-
-ND.pgls.summary <- bind_rows(ND.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
-
-colnames(MCC.ND.summary) <- c("Parameter", "Estimate", "LCI", "UCI")
 
 ND.plot <-ND.pgls.summary %>% filter(Parameter != "(Intercept)") %>% 
   ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
@@ -1522,11 +1579,24 @@ saveRDS(BAMM.mu.pgls.models, "data/BAMM.mu.pgls.models.rds")
 
 ```{r, warning=F, error = F, fig.height = 8, fig.width = 4}
 BAMM.lambda.pgls.models <- readRDS("data/BAMM.lambda.pgls.models.rds")
-MCC.Lambda.top <- readRDS('data/MCC.Lambda.top.rds')
 
 BAMM.lambda.pgls.summary <- lapply(BAMM.lambda.pgls.models, function(x) {
   data.frame(x$coefficients, confint(x)) %>% tibble::rownames_to_column()
 })
+
+#Now plot this for Lambda
+
+MCC.Lambda.top <- readRDS('data/MCC.Lambda.top.rds')
+MCC.lambda.summary <- data.frame(MCC.Lambda.top$coefficients,
+                              confint(MCC.Lambda.top),
+                              coef(summary(MCC.Lambda.top))[,2], #Std.Error
+                              coef(summary(MCC.Lambda.top))[,3], #t-val
+                              coef(summary(MCC.Lambda.top))[,4], #pval
+                              MCC.Lambda.top[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = "MCC_model") %>% 
+  tibble::rownames_to_column() %>% 
+  `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name"))
+
 
 parameter_names <- c(
                     `bioclim4` = "Temperature Seasonality",
@@ -1537,11 +1607,7 @@ parameter_names <- c(
                     `SDi` = "Sexual Dichromatism"
                     )
 
-MCC.lambda.summary <- data.frame(MCC.Lambda.top$coefficients, confint(MCC.Lambda.top)) %>% tibble::rownames_to_column()
-
 BAMM.lambda.pgls.summary <- bind_rows(BAMM.lambda.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
-
-colnames(MCC.lambda.summary) <- c("Parameter", "Estimate", "LCI", "UCI")
 
   # for (x in unique(BAMM.lambda.pgls.summary$Parameter)[2:7]){
   #   filter(Parameter == x & between(Estimate, left = as.numeric(hpd.Lambda.top[1,x]), right = as.numeric(hpd.Lambda.top[2,x])))
@@ -1601,17 +1667,25 @@ BAMM.lambda.plot <- BAMM.lambda.plot + geom_errorbarh(data = MCC.lambda.summary 
 #Figure for extinction
 
 BAMM.mu.pgls.models <- readRDS("data/BAMM.mu.pgls.models.rds")
-MCC.Mu.top <- readRDS('data/MCC.Mu.top.rds')
 
 BAMM.mu.pgls.summary <- lapply(BAMM.mu.pgls.models, function(x) {
   data.frame(x$coefficients, confint(x)) %>% tibble::rownames_to_column()
 })
 
-MCC.mu.summary <- data.frame(MCC.Mu.top$coefficients, confint(MCC.Mu.top)) %>% tibble::rownames_to_column()
-
 BAMM.mu.pgls.summary <- bind_rows(BAMM.mu.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
 
-colnames(MCC.mu.summary) <- c("Parameter", "Estimate", "LCI", "UCI")
+#Now plot this for Lambda
+
+MCC.Mu.top <- readRDS('data/MCC.Mu.top.rds')
+MCC.mu.summary <- data.frame(MCC.Mu.top$coefficients,
+                              confint(MCC.Mu.top),
+                              coef(summary(MCC.Mu.top))[,2], #Std.Error
+                              coef(summary(MCC.Mu.top))[,3], #t-val
+                              coef(summary(MCC.Mu.top))[,4], #pval
+                              MCC.Mu.top[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = "MCC_model") %>% 
+  tibble::rownames_to_column() %>% 
+  `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name"))
 
 #Get rid of outliers
 BAMM.mu.pgls.summary.RO <- dcast(BAMM.mu.pgls.summary %>% select(Parameter,Estimate) %>% filter(Parameter != "(Intercept)"), Estimate ~ Parameter, value.var = "Estimate")
@@ -1664,16 +1738,16 @@ grid.arrange(
   symmetrise_scale(BAMM.lambda.plot, "x"),
   symmetrise_scale(BAMM.mu.plot, "x"),
   nrow = 1
-)
+) 
 ```
 **Figure S9:** This figure is the same basic figure as seen in the manuscript (Figure 1). It provides model estimates for four response variables across 100 random trees alongside the MCC tree.
 
 **Table S7:** The estimates of the MCC models plotted above are based on the following data tables.
 ```{r}
-MCC.DR.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates")
-MCC.ND.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates")
-MCC.lambda.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Speciation Estimates")
-MCC.mu.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Extinction Estimates")
+MCC.DR.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates", split.table = Inf)
+MCC.ND.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates", split.table = Inf)
+MCC.lambda.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Speciation Estimates", split.table = Inf)
+MCC.mu.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Extinction Estimates", split.table = Inf)
 ```
   
 From the estimates of 100 trees we calculated Highest posterior density (HPD) intervals. Note that these do no account for the CI of each estimate. Thus it is a more a representation of tree uncertainty than model uncertainty. 
@@ -2582,69 +2656,71 @@ Subset.MCC.ND.top <- gls(MCC.ND ~ Sexual_selection_ppca
                 method = "REML")
 saveRDS(Subset.MCC.ND.top, 'data/Subset.MCC.ND.top.rds')
 
-#Run the 100 models for DR and ND using the best model:
-Subset.data.noMCC <- SS.subset %>% dplyr::select(TipLabel, Sexual_selection_ppca, range.size.m2, bioclim4, residuals.PC1, PC1.LIG, NPP)
+## No longer needed 
 
-#Take the restricted data and make it simpler with just responses and predictors.Note that we join the es.values for the 100 trees
-Subset.DR.model.data <- lapply(es.list, function(x) { #es.list is a list of ES values calculated earlier
-  left_join(Subset.data.noMCC, 
-            x %>% as.data.frame() %>% tibble::rownames_to_column() %>% `colnames<-`(c("TipLabel", "DR")), 
-            by = "TipLabel")
-})
-
-#PGLS needs tiplabel as rowname
-Subset.DR.model.data <- lapply(Subset.DR.model.data, function(x) {
-  tibble::column_to_rownames(x, "TipLabel")})
-
-#Prune the trees
-Subset.pruned.trees<-lapply(passerine.trees, function(x) {
-  drop.tip(x,x$tip.label[-match(SS.subset$TipLabel, x$tip.label)])
-})
-
-#Use mapply to create a list of PGLS global models
-Subset.DR.pgls.models <- mcmapply(function(x,y) {
-  gls(DR ~ Sexual_selection_ppca 
-         + log(range.size.m2)
-         + bioclim4 #Seasonal variation
-         + residuals.PC1 #Spatial variation
-         + PC1.LIG #Long-term climate variation
-         + NPP,
-    correlation = corPagel(0.9711, phy = y, fixed = TRUE), 
-    data = x, 
-    method = "REML")
-}, x = Subset.DR.model.data, y = Subset.pruned.trees,
-SIMPLIFY = FALSE, #Prevents the catastrophic loss of structure, names and attributes
-mc.cores = 8) #Specify core number 
-
-saveRDS(Subset.DR.pgls.models, "data/Subset.DR.pgls.models.rds")
-
-#Now for Node Density:
-Subset.ND.model.data <- lapply(nd.list, function(x) { #es.list is a list of ES values calculated earlier
-  left_join(Subset.data.noMCC, 
-            x %>% as.data.frame() %>% tibble::rownames_to_column() %>% `colnames<-`(c("TipLabel", "ND")), 
-            by = "TipLabel")
-})
-
-#PGLS needs tiplabel as rowname
-Subset.ND.model.data <- lapply(Subset.ND.model.data, function(x) {
-  tibble::column_to_rownames(x, "TipLabel")})
-
-#Use mapply to create a list of PGLS global models
-Subset.ND.pgls.models <- mcmapply(function(x,y) {
-gls(ND ~ Sexual_selection_ppca 
-         + log(range.size.m2)
-         + bioclim4 #Seasonal variation
-         + residuals.PC1 #Spatial variation
-         + PC1.LIG #Long-term climate variation
-         + NPP,
-    corPagel(1, phy = y, fixed = TRUE), 
-    data = x, 
-    method = "REML")
-}, x = Subset.ND.model.data, y = Subset.pruned.trees, 
-SIMPLIFY = FALSE, #Prevents the catastrophic loss of structure, names and attributes
-mc.cores = 8) #Specify core number 
-
-saveRDS(Subset.ND.pgls.models, "data/Subset.ND.pgls.models.rds")
+# #Run the 100 models for DR and ND using the best model:
+# Subset.data.noMCC <- SS.subset %>% dplyr::select(TipLabel, Sexual_selection_ppca, range.size.m2, bioclim4, residuals.PC1, PC1.LIG, NPP)
+# 
+# #Take the restricted data and make it simpler with just responses and predictors.Note that we join the es.values for the 100 trees
+# Subset.DR.model.data <- lapply(es.list, function(x) { #es.list is a list of ES values calculated earlier
+#   left_join(Subset.data.noMCC, 
+#             x %>% as.data.frame() %>% tibble::rownames_to_column() %>% `colnames<-`(c("TipLabel", "DR")), 
+#             by = "TipLabel")
+# })
+# 
+# #PGLS needs tiplabel as rowname
+# Subset.DR.model.data <- lapply(Subset.DR.model.data, function(x) {
+#   tibble::column_to_rownames(x, "TipLabel")})
+# 
+# #Prune the trees
+# Subset.pruned.trees<-lapply(passerine.trees, function(x) {
+#   drop.tip(x,x$tip.label[-match(SS.subset$TipLabel, x$tip.label)])
+# })
+# 
+# #Use mapply to create a list of PGLS global models
+# Subset.DR.pgls.models <- mcmapply(function(x,y) {
+#   gls(DR ~ Sexual_selection_ppca 
+#          + log(range.size.m2)
+#          + bioclim4 #Seasonal variation
+#          + residuals.PC1 #Spatial variation
+#          + PC1.LIG #Long-term climate variation
+#          + NPP,
+#     correlation = corPagel(0.9711, phy = y, fixed = TRUE), 
+#     data = x, 
+#     method = "REML")
+# }, x = Subset.DR.model.data, y = Subset.pruned.trees,
+# SIMPLIFY = FALSE, #Prevents the catastrophic loss of structure, names and attributes
+# mc.cores = 8) #Specify core number 
+# 
+# saveRDS(Subset.DR.pgls.models, "data/Subset.DR.pgls.models.rds")
+# 
+# #Now for Node Density:
+# Subset.ND.model.data <- lapply(nd.list, function(x) { #es.list is a list of ES values calculated earlier
+#   left_join(Subset.data.noMCC, 
+#             x %>% as.data.frame() %>% tibble::rownames_to_column() %>% `colnames<-`(c("TipLabel", "ND")), 
+#             by = "TipLabel")
+# })
+# 
+# #PGLS needs tiplabel as rowname
+# Subset.ND.model.data <- lapply(Subset.ND.model.data, function(x) {
+#   tibble::column_to_rownames(x, "TipLabel")})
+# 
+# #Use mapply to create a list of PGLS global models
+# Subset.ND.pgls.models <- mcmapply(function(x,y) {
+# gls(ND ~ Sexual_selection_ppca 
+#          + log(range.size.m2)
+#          + bioclim4 #Seasonal variation
+#          + residuals.PC1 #Spatial variation
+#          + PC1.LIG #Long-term climate variation
+#          + NPP,
+#     corPagel(1, phy = y, fixed = TRUE), 
+#     data = x, 
+#     method = "REML")
+# }, x = Subset.ND.model.data, y = Subset.pruned.trees, 
+# SIMPLIFY = FALSE, #Prevents the catastrophic loss of structure, names and attributes
+# mc.cores = 8) #Specify core number 
+# 
+# saveRDS(Subset.ND.pgls.models, "data/Subset.ND.pgls.models.rds")
 
 #BAMM Top Models 
 
@@ -2728,22 +2804,111 @@ Subset.MCC.DR.top <- readRDS('data/Subset.MCC.DR.top.rds')
 Subset.MCC.DR.top[["modelStruct"]][["corStruct"]] %>% `names<-`("DR lambda") %>% pander()
 ```
 
+```{r, eval = F}
 
-```{r}
-Subset.DR.pgls.models <- readRDS("data/Subset.DR.pgls.models.rds")
-Subset.MCC.DR.top <- readRDS('data/Subset.MCC.DR.top.rds')
+##########################################################
+####### Read in DR models and extract estimates: #########
+##########################################################
 
-Subset.cols <- brewer.pal(n = 7, name = "Dark2")[-6]
+#We ran DR and ND models on 1000 trees
+files.DR.SS <- list.files(path = "/Users/justincally/Dropbox/Runs Spartan/DR_SS/", pattern = "\\.rds$", full.names = TRUE) #1000 models
+df <- list()
+rds.list <- list()
+models <- list()
+c.list <- NULL
 
-Subset.DR.pgls.summary <- lapply(Subset.DR.pgls.models, function(x) {
-  data.frame(x$coefficients, confint(x)) %>% tibble::rownames_to_column()
+lapply(files.DR.SS, function(x) {
+models <- readRDS(x)
+rds.list <- unlist(models, recursive = F, use.names = T)
+c.list <<- c(c.list, rds.list[-grep(".log", names(rds.list))])
+rm(models)
+rm(rds.list)
+gc()
 })
 
-Subset.MCC.DR.summary <- data.frame(Subset.MCC.DR.top$coefficients, confint(Subset.MCC.DR.top)) %>% tibble::rownames_to_column()
 
-Subset.DR.pgls.summary <- bind_rows(Subset.DR.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
+lapply(names(c.list), function(x) {
+  tryCatch({
+  model <- c.list[[x]]
+  df[[x]] <<- data.frame(model$coefficients,
+                              confint(model),
+                              coef(summary(model))[,2], #Std.Error
+                              coef(summary(model))[,3], #t-val
+                              coef(summary(model))[,4], #pval
+                              model[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = x) %>% tibble::rownames_to_column()
+  gc(verbose = FALSE)
+  },
+  error = function(e) NULL
+  )
+})
 
-colnames(Subset.MCC.DR.summary) <- c("Parameter", "Estimate", "LCI", "UCI")
+Subset.DR.pgls.summary <- bind_rows(df) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name"))
+#saveRDS(Subset.DR.pgls.summary, "data/Subset.DR.pgls.summary.rds") #Save a simple df with the model and coeff
+
+
+
+#read in 1000 trees: 
+
+#We ran DR and ND models on 1000 trees
+files.ND.SS <- list.files(path = "/Users/justincally/Dropbox/Runs Spartan/ND_SS/", pattern = "\\.rds$", full.names = TRUE) #1000 models
+df <- list()
+rds.list <- list()
+models <- list()
+c.list <- NULL
+
+lapply(files.ND.SS, function(x) {
+models <- readRDS(x)
+rds.list <- unlist(models, recursive = F, use.names = T)
+c.list <<- c(c.list, rds.list[-grep(".log", names(rds.list))])
+rm(models)
+rm(rds.list)
+gc()
+})
+
+
+lapply(names(c.list), function(x) {
+  tryCatch({
+  model <- c.list[[x]]
+  df[[x]] <<- data.frame(model$coefficients,
+                              confint(model),
+                              coef(summary(model))[,2], #Std.Error
+                              coef(summary(model))[,3], #t-val
+                              coef(summary(model))[,4], #pval
+                              model[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = x) %>% tibble::rownames_to_column()
+  gc(verbose = FALSE)
+  },
+  error = function(e) NULL
+  )
+})
+
+Subset.ND.pgls.summary <- bind_rows(df) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name"))
+#saveRDS(Subset.ND.pgls.summary, "data/Subset.ND.pgls.summary.rds") #Save a simple df with the model and coeff
+rm(c.list)
+############################
+```
+
+
+```{r}
+Subset.DR.pgls.summary <- readRDS("data/Subset.DR.pgls.summary.rds")
+Subset.ND.pgls.summary <- readRDS("data/Subset.ND.pgls.summary.rds")
+
+#Cols for plot: 
+Subset.cols <- brewer.pal(n = 7, name = "Dark2")[-6]
+
+### MCC
+Subset.MCC.DR.top <- readRDS('data/Subset.MCC.DR.top.rds')
+
+Subset.MCC.DR.summary <- data.frame(Subset.MCC.DR.top$coefficients,
+                              confint(Subset.MCC.DR.top),
+                              coef(summary(Subset.MCC.DR.top))[,2], #Std.Error
+                              coef(summary(Subset.MCC.DR.top))[,3], #t-val
+                              coef(summary(Subset.MCC.DR.top))[,4], #pval
+                              Subset.MCC.DR.top[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = "MCC_model") %>% tibble::rownames_to_column()
+
+colnames(Subset.MCC.DR.summary) <- c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name")
 
 parameter_names <- c(
                     `bioclim4` = "Temperature Seasonality",
@@ -2793,18 +2958,17 @@ Subset.DR.plot <- Subset.DR.plot + geom_errorbarh(data = Subset.MCC.DR.summary %
 ####################################
 #For ND
 
-Subset.ND.pgls.models <- readRDS("data/Subset.ND.pgls.models.rds")
 Subset.MCC.ND.top <- readRDS('data/Subset.MCC.ND.top.rds')
 
-Subset.ND.pgls.summary <- lapply(Subset.ND.pgls.models, function(x) {
-  data.frame(x$coefficients, confint(x)) %>% tibble::rownames_to_column()
-})
+Subset.MCC.ND.summary <- data.frame(Subset.MCC.ND.top$coefficients,
+                              confint(Subset.MCC.ND.top),
+                              coef(summary(Subset.MCC.ND.top))[,2], #Std.Error
+                              coef(summary(Subset.MCC.ND.top))[,3], #t-val
+                              coef(summary(Subset.MCC.ND.top))[,4], #pval
+                              Subset.MCC.ND.top[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = "MCC_model") %>% tibble::rownames_to_column()
 
-Subset.MCC.ND.summary <- data.frame(Subset.MCC.ND.top$coefficients, confint(Subset.MCC.ND.top)) %>% tibble::rownames_to_column()
-
-Subset.ND.pgls.summary <- bind_rows(Subset.ND.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
-
-colnames(Subset.MCC.ND.summary) <- c("Parameter", "Estimate", "LCI", "UCI")
+colnames(Subset.MCC.ND.summary) <- c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name")
 
 Subset.ND.pgls.summary$Parameter = factor(Subset.ND.pgls.summary$Parameter, levels=c('bioclim4','log(range.size.m2)','NPP','PC1.LIG', 'residuals.PC1', 'Sexual_selection_ppca'))
 
@@ -2852,11 +3016,20 @@ Subset.Lambda.pgls.summary <- lapply(Subset.BAMM.lambda.pgls.models, function(x)
   data.frame(x$coefficients, confint(x)) %>% tibble::rownames_to_column()
 })
 
-Subset.MCC.Lambda.summary <- data.frame(Subset.MCC.Lambda.top$coefficients, confint(Subset.MCC.Lambda.top)) %>% tibble::rownames_to_column()
-
 Subset.Lambda.pgls.summary <- bind_rows(Subset.Lambda.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
 
-colnames(Subset.MCC.Lambda.summary) <- c("Parameter", "Estimate", "LCI", "UCI")
+#MCC
+
+Subset.MCC.Lambda.summary <- data.frame(Subset.MCC.Lambda.top$coefficients,
+                              confint(Subset.MCC.Lambda.top),
+                              coef(summary(Subset.MCC.Lambda.top))[,2], #Std.Error
+                              coef(summary(Subset.MCC.Lambda.top))[,3], #t-val
+                              coef(summary(Subset.MCC.Lambda.top))[,4], #pval
+                              Subset.MCC.Lambda.top[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = "MCC_model") %>% tibble::rownames_to_column()
+
+colnames(Subset.MCC.Lambda.summary) <- c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name")
+
 
 Subset.Lambda.pgls.summary$Parameter = factor(Subset.Lambda.pgls.summary$Parameter, levels=c('bioclim4','log(range.size.m2)','NPP','PC1.LIG', 'residuals.PC1', 'Sexual_selection_ppca'))
 
@@ -2913,12 +3086,19 @@ Subset.MCC.Mu.top <- readRDS('data/Subset.MCC.Mu.top.rds')
 Subset.Mu.pgls.summary <- lapply(Subset.BAMM.Mu.pgls.models, function(x) {
   data.frame(x$coefficients, confint(x)) %>% tibble::rownames_to_column()
 })
-
-Subset.MCC.Mu.summary <- data.frame(Subset.MCC.Mu.top$coefficients, confint(Subset.MCC.Mu.top)) %>% tibble::rownames_to_column()
-
 Subset.Mu.pgls.summary <- bind_rows(Subset.Mu.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
 
-colnames(Subset.MCC.Mu.summary) <- c("Parameter", "Estimate", "LCI", "UCI")
+#MCC
+
+Subset.MCC.Mu.summary <- data.frame(Subset.MCC.Mu.top$coefficients,
+                              confint(Subset.MCC.Mu.top),
+                              coef(summary(Subset.MCC.Mu.top))[,2], #Std.Error
+                              coef(summary(Subset.MCC.Mu.top))[,3], #t-val
+                              coef(summary(Subset.MCC.Mu.top))[,4], #pval
+                              Subset.MCC.Mu.top[["modelStruct"]][["corStruct"]][1], #lambda value
+                              model = "MCC_model") %>% tibble::rownames_to_column()
+
+colnames(Subset.MCC.Mu.summary) <- c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name")
 
 Subset.Mu.pgls.summary$Parameter = factor(Subset.Mu.pgls.summary$Parameter, levels=c('bioclim4','log(range.size.m2)','NPP','PC1.LIG', 'residuals.PC1', 'Sexual_selection_ppca'))
 
@@ -2979,10 +3159,10 @@ grid.arrange(symmetrise_scale(Subset.DR.plot, "x"),
 
 **Table S14:** MCC model estimates from the above model are presented here as numberical values with 95 % CIs.
 ```{r}
-Subset.MCC.DR.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates from Male-bias SS")
-Subset.MCC.ND.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates from Male-bias SS")
-Subset.MCC.Lambda.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Speciation Estimates from Male-bias SS")
-Subset.MCC.Mu.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Extinction Estimates from Male-bias SS")
+Subset.MCC.DR.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates from Male-bias SS", split.table = Inf)
+Subset.MCC.ND.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates from Male-bias SS", split.table = Inf)
+Subset.MCC.Lambda.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Speciation Estimates from Male-bias SS", split.table = Inf)
+Subset.MCC.Mu.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Extinction Estimates from Male-bias SS", split.table = Inf)
 ```
 
 

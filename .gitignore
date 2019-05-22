@@ -26,6 +26,12 @@
 !data/MCC.BAMM.df.rds
 !data/path_model.rds
 
+#Big model summaries
+!DR.pgls.summary.rds
+!ND.pgls.summary.rds
+!Subset.DR.pgls.summary.rds
+!Subset.ND.pgls.summary.rds
+
 #And these 4 figures
 !Figures/ModelEstimates.pdf
 !Figures/DRSpeciationFigure.pdf
