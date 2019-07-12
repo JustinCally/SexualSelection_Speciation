@@ -8,6 +8,20 @@
 *.psd
 *.rds
 *.rda
+*.ai
+*.svg
+
+Manuscript.docx
+Manuscript.Rmd
+Manuscript.pdf
+Sexual_Selection_and_Speciation_cache/
+Sexual_Selection_and_Speciation_files/
+.Rproj.user
+data/BAMM_MCC/
+Figures_old/
+bamm_extinction/data/bamm_files/
+bamm_extinction/data/full_passerines/
+data/trees/
 
 #Except this data needed in Rmarkdown regeneration
 !data/MCC.DR.top.rds
@@ -26,6 +40,10 @@
 !data/MCC.BAMM.df.rds
 !data/path_model.rds
 
+#Correlations 
+!data/all.trees.correlations.rds
+!data/Harvey.vs.us.rds
+
 #Big model summaries
 !DR.pgls.summary.rds
 !ND.pgls.summary.rds
@@ -33,43 +51,38 @@
 !Subset.ND.pgls.summary.rds
 
 #And these 4 figures
-!Figures/ModelEstimates.pdf
+!Figures/Estimates_and_scatter_edit.pdf
 !Figures/DRSpeciationFigure.pdf
 !Figures/Path_Analysis.pdf
 
-Manuscript.docx
-Manuscript.Rmd
-Manuscript.pdf
-Sexual_Selection_and_Speciation_cache/
-Sexual_Selection_and_Speciation_files/
-.Rproj.user
-data/BAMM_MCC/
-Figures/
-bamm_extinction/data/bamm_files/
-bamm_extinction/data/full_passerines/
-data/trees/
+
 
 #Big files (just in case): Use: find ./* -size +100M | cat >> .gitignore
-./Figures/BigSpeciationPlot.psd
-./Figures/DRSpeciationFigure.ai
-./Figures/SpeciationFigure.ai
-./Sexual_Selection_and_Speciation_cache/html/unnamed-chunk-31_b15c755a88a4c8594832c9a5e181e799.rdb
-./Sexual_Selection_and_Speciation_cache/html/unnamed-chunk-35_7603cdca3bd8a90f397375b4b7c9bc2d.rdb
-./Sexual_Selection_and_Speciation_cache/html/unnamed-chunk-21_c63b080ce1a989d84b2657ea67fb47a8.rdb
-./Sexual_Selection_and_Speciation_cache/html/unnamed-chunk-41_8d5075345a6972482840eb1e2ac5fcd7.rdb
-./Sexual_Selection_and_Speciation_cache/html/unnamed-chunk-58_67a80ed21565b2bef8f9969341c31e2c.rdb
-./Sexual_Selection_and_Speciation_cache/html/unnamed-chunk-28_f4c9a4d598aaa30611602dced0af89a7.rdb
-./Sexual_Selection_and_Speciation_cache/html/unnamed-chunk-24_8770cf282a07c995bd059b65b49579e9.rdb
-./Sexual_Selection_and_Speciation_cache/html/unnamed-chunk-49_086b1a2acd5e7934e4baac77a4b0998d.rdb
+./Figures_old/BigSpeciationPlot.psd
+./Figures_old/DRSpeciationFigure.ai
+./Figures_old/SpeciationFigure.ai
+./Sexual_Selection_and_Speciation_cache/html/BAMM wrangling_ba7e7cc1f4216044101d33aedab2150c.rdb
+./Sexual_Selection_and_Speciation_cache/html/MCC DR and ND lambda_4e12cca71e206633598abbc33094e0af.rdb
+./Sexual_Selection_and_Speciation_cache/html/Hackett Data_599c5385cec4833748fd45ca2d5e1ca3.rdb
+./Sexual_Selection_and_Speciation_cache/html/CSS_cf26b5461383a80dbc5bdc03edd9f0b8.rdb
+./Sexual_Selection_and_Speciation_cache/html/SS plots_31035eb1bbbd5447eb6a7341b34d84b1.rdb
+./Sexual_Selection_and_Speciation_cache/html/Armenta plots_278eb8876960d0fbeb3e765575d259a1.rdb
+./Sexual_Selection_and_Speciation_cache/html/BAMM plots_ef2f5d48d5d10da844f2b99805a22a41.rdb
 ./bamm_extinction/data/trees/tenthousand.nex
 ./bamm_extinction/data/trees/genetic_2500.nex
 ./bamm_extinction/data/trees/passerine_2500.nex
 ./bamm_extinction/data/full_passerines/Test5/tree_8950_event_data.txt
+./data/trees/thousand_trees.rds
+./data/trees/tenthousand.nex
+./data/trees/genetic_2500.nex
+./data/trees/passerine_2500.nex
 ./data/MCC.DR.corPagel.rds
 ./data/MCC.BAMM.ED.rds
+./data/MCC.BAMM.ED.Constant.rds
 ./data/Hackett_split_eventsample.rda
 ./data/Armenta.DR.pgls.models.rds
 ./data/BAMM.lambda.pgls.models.rds
 ./data/BAMM.mu.pgls.models.rds
 ./data/MCC.ND.corPagel.rds
 ./data/BAMM_MCC/tree_MCC_event_data.txt
+./data/BAMM_MCC/TimeConstant/tree_MCC_Constant_event_data.txt

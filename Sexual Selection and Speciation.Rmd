@@ -1,17 +1,16 @@
 ---
 title: Male-biased sexual selection, but not sexual dichromatism, predicts speciation
   in birds
-author: Justin G. Cally^1^, Devi Stuart-Fox^1^, Luke Holman^1^, Iliana Medina Guzmán^1^
-  <br></br> <br></br> ^1^The University of Melbourne
-csl: References/AmNat.csl
+author: "Justin G. Cally, Devi Stuart-Fox, Luke Holman, Iliana Medina Guzmán"
+csl: References/evolution.csl
 output:
   html_document:
-    code_folding: hide
-    depth: 3
-    number_sections: no
-    theme: cosmo
-    toc: yes
-    toc_float: yes
+    toc: true # table of content true
+    toc_float: true # make 
+    depth: 3  # upto three depths of headings (specified by #, ## and ###)
+    number_sections: false  ## if you want number sections at each table header
+    theme: yeti # lovely fonts and colours
+    code_folding: hide # awesome buttons to show/hide the code
 subtitle: Supplementary Material
 bibliography: References/SS_Extinction.bib
 ---
@@ -28,6 +27,7 @@ library(lme4)
 library(ape)
 library(geiger)
 library(grid)
+library(svglite)
 library(gridExtra)
 library(nlme)
 library(phytools)
@@ -52,11 +52,25 @@ library(RColorBrewer)
 library(tibble)
 library(stargazer)
 library(ggraph)
+library(ggiraphExtra)
 library(stringr)
+library(Cairo)
+library(gdtools)
+library(data.table)
+library(bindrcpp)
 #devtools::install_github("Ax3man/phylopath")
+#devtools::install_github("thomasp85/patchwork")
+#devtools::install_github('VPetukhov/ggrastr')
+library(ggrastr)
+library(patchwork)
 library(phylopath)
+if(!requireNamespace("BiocManager", quietly = TRUE)){
+    install.packages("BiocManager")
+  }
+#BiocManager::install(c("EBImage", "ggtree"))
 library("EBImage") # for images
 library("ggtree")
+library("ggnewscale")
 source("bamm_extinction/functions/check_and_fix_ultrametric.R")
 source("functions/essim.R")
 source("functions/diversification_rate_calculation.R")
@@ -67,17 +81,17 @@ source('functions/gheatmap2.R') #Gets rid of spaces between tiles
 knitr::opts_chunk$set(cache=TRUE)
 ```
 
-#Compiling the data
+# Compiling the data
 
 We aimed to compile data on Passerine birds, which represent the largest group for which relatively complete phylogenetic, trait and environmental data are available. The following details the source and use of the data.
 
-##Speciation Rate
+## Speciation Rate
 
 To obtain speciation rate estimates we used Bayesian Analysis of Macroevolutionary Mixtures (BAMM). Additionally, we compared our BAMM output files (event data)  to an existing rate dataset [@Harvey_2017].
 
 Rather than obtaining one estimate of speciation rate from one tree, we ran BAMM 100 times on 100 trees plus an MCC tree to obtain uncertainty estimates of the speciation rate generated from the phylogeny produced by @Jetz_2012. We also estimated extinction rate from BAMM and speciation rates using the diversification rate and node density statistic ($\lambda_{DR}$ and ($\lambda_{ND}$). See @Rabosky_diversification_2018 for a comparison of methods.
 
-##Sexual dichromatism and Male-biased Sexual Selection
+## Sexual dichromatism and Male-biased Sexual Selection
 
 The first proxy for sexual selection that we used was based on measures of sexual dichromatism. We used two existing datasets; a complete set of male and female plumage scores in Passerines from @Dale_2015 and reflectance data from 1000 birds from @Armenta_2008.
 
@@ -85,7 +99,7 @@ Briefly, @Dale_2015 obtained male and female plumage score, the ratio of which p
 
 Alongside sexual dichromatism, @Dale_2015 compiled available data for traits such as: Body size, tropical life history, Sexual selection, Cooperative breeding and Migration. As a second measure of sexual selection, we used a phylogenetic PCA (PC1) that estimates male-biased sexual selection from a species level dataset of sexual size dimorphism, social polygyny and paternal care. Higher values indicate higher size dimorphism (larger males), higher polygyny and less paternal care.
 
-##Environmental predictors 
+## Environmental predictors 
 
 We obtained species range distribution maps from Birdlife International [@birdlife_2017]. These species range maps cover nearly all species of birds. From these spatial information files we obtained estimates of the following (note that not all the data extracted was subsequently used in the analysis):  
 
@@ -99,21 +113,21 @@ Below we outline the code used for extracting spatial data from bird ranges, how
 
 **1)** Randomly sampled the range polygon 1000 times: 
 
-```{r, eval = FALSE}
+```{r spatial example one, eval = FALSE}
 #Increse the iterations (defaukt is 4) so we can obtain complete samples of each range
 bird.points <- lapply(bird.ranges, 
                        function(x) {spsample(x, n=1000, type="random", iter = 30)})
 ```
   
 **2)** Extracted the bioclim or other (*e.g.* NPP) data from each of the points:
-```{r, eval = FALSE}
+```{r spatial example two, eval = FALSE}
 bird.values <- lapply(bird.points, function(x) {raster::extract(bioclim_data, x)})
 bird.values <- as.list(data.frame((bird.values)))
 ```
   
 **3)** Summarised the extracted data across the 1,000 points into a summary value of interest (means and sd) for each species and exported that data.
 
-```{r, eval = FALSE}
+```{r spatial example three, eval = FALSE}
 #Obtain means per variable per species
 bird.frame <- lapply(bird.values, function(x) {as.data.frame(x)})
 bird.summary <- lapply(bird.frame, function(x) {
@@ -124,7 +138,7 @@ bird.means <- t(as.data.frame(bird.summary))
 bird.means <- (split(bird.means, 1:19))
 
 #Now add column of species name: Same order carried through
-bird.means <- cbind.data.frame(shps.jetz, bird.means)
+bird.means <- cbind.data.frame(bird.names, bird.means)
 
 rownames(bird.means) <- NULL
 colnames(bird.means) <- c("binomial","bioclim1", "bioclim2", "bioclim3", "bioclim4", "bioclim5", "bioclim6", "bioclim7", "bioclim8", "bioclim9", "bioclim10", "bioclim11", "bioclim12", "bioclim13", "bioclim14", "bioclim15", "bioclim16", "bioclim17", "bioclim18", "bioclim19")
@@ -135,7 +149,7 @@ write.csv(bird.means, 'data/bird.means.csv')
   
 **4)** The process above was repeated when we used gridded data for the LGM, LIG, NPP and human population density, while range size was obtained from the following code: 
 
-```{r, eval = FALSE}
+```{r spatial example four, eval = FALSE}
 bird.range.size <- sapply(bird.ranges,
                        function(x) {(area(x))})
 bird.range.size <- sapply(bird.range.size, function(x) {sum(x)})
@@ -149,7 +163,7 @@ write.csv(bird.range.size, 'data/bird.range.size.csv')
 ```
   
 
-#Generating biologically relevant predictors
+# Generating biologically relevant predictors
 
 In this study we assess the relationship between sexual selection and extinction risk. In doing so we attempt to take into account as many other predictors of extinction as possible, primarily through environmental variables. Our model structure seeks to contain:
 
@@ -161,9 +175,9 @@ In this study we assess the relationship between sexual selection and extinction
                             + Long-term variability of temperature (LIG)  
                             + NPP  
 
-These predictors can be obtained from the compiled datasets seen here: 
+These predictors can be obtained from the compiled datasets read in here: 
 
-```{r, warning=FALSE}
+```{r read data, warning=FALSE}
 plumage.scores <- read.csv('data/plumage_scores.csv')
 #Generate sexual dichromatism score: 
 plumage.scores$SDi <- abs(plumage.scores$Male_plumage_score - plumage.scores$Female_plumage_score)
@@ -171,14 +185,19 @@ plumage.scores$SDi <- abs(plumage.scores$Male_plumage_score - plumage.scores$Fem
 #Make DF with enviro variables and plumage scores
 complete.dataframe <- read.csv('data/complete.dataframe.csv')
 complete.dataframe <- left_join(plumage.scores %>% dplyr::select(binomial, Male_plumage_score, Female_plumage_score, SDi), complete.dataframe, by = "binomial")
+
+head(complete.dataframe) %>%
+  kable("html") %>% 
+  kable_styling() %>%
+  scroll_box(width = "100%", height = "500px")
 ```
 
-##Environmental Spatial Variability PCAs
+## Environmental Spatial Variability PCAs
 
 To obtain estimates of spatial variability in environment we performed PCAs of the standard errors of the bioclimatic variables across the 1000 random points extracted per species (excluding seasonality in temperature and precipitation). We expect variability to increase with increased range size. To correct for this association, and to be able to include both variables in the model, we took the residuals from GAM models of the relationship between PCA components and range size.
 
 **Table S1:** Loadings for the first two PCs, from a PCA on the variation (standard error, where n ~ 1,000) of each bioclim variable except the standard deviation of temperature seasonality (sd.bioclim4) and the standard error of precipitation seasonality (sd.bioclim15), as these are already measures of variability and based on other bioclimatic variables.
-```{r}
+```{r PCA bioclim}
 restricted.data <- complete.dataframe %>% drop_na(bioclim1) #Drop species without environmental data
 PCA.bioclim <- prcomp(restricted.data[c('sd.bioclim1', 'sd.bioclim2', 'sd.bioclim3', 'sd.bioclim5', 'sd.bioclim6', 'sd.bioclim7', 'sd.bioclim8', 'sd.bioclim9', 'sd.bioclim10', 'sd.bioclim11', 'sd.bioclim12', 'sd.bioclim13', 'sd.bioclim14', 'sd.bioclim16', 'sd.bioclim17', 'sd.bioclim18', 'sd.bioclim19')], #Select sd.bioclim
                       scale = TRUE, center = TRUE)
@@ -189,7 +208,7 @@ restricted.data <- cbind(restricted.data, PCA.predictions)
 as.data.frame(PCA.bioclim$rotation[,1:2]) %>% `colnames<-`(c("PC1", "PC2")) %>% pander()
 ```
 
-```{r, fig.width=10, fig.height=5}
+```{r PCA GAM, fig.width=10, fig.height=5}
 #run GAM of association between range size and spatial climatic variation
 PC1.gam <- mgcv::gam(PC1*(-1) ~ s(log(range.size.m2)), data = restricted.data, family = "gaussian") #Inverse as the PC1 loads to the negative (COUNTER-INTUITIVE)
 
@@ -210,13 +229,13 @@ plot.gam(PC2.gam, residuals = T, main = 'PC2 residuals (precip)')
   
 **Figure S1:** The relationship between spatial variability in the temperature components (PC1) and log-range size is relatively strong. The relationship between spatial variability in precipitation (PC2) and log-range size is weaker. In the analysis we only used the residuals from PC1. PC1 accounts for 48.1 % of the variation.
 
-##Long term climate variability (LIG anomaly)
+## Long term climate variability (LIG anomaly)
 
 Climate stability through time can potentially affect diversification dynamics. To gain estimates for change in climate over the past ~130,000 years we used the difference in bioclim variables between the LIG and present values. The plots show the two PCs, broadly representing temperature and precipitation. We used the difference between the present and LIG climates as these represent a longer (evolutionarily meaningful) time-scale than the difference between the LGM and present climates.
 
 **Table S2:** Loadings for the first two PCs of each of the PCAs for the difference in bioclimatic variables between today and the LIG. Here, PC1 is more heavily loaded for absolute temperature difference, while PC2 is more heavily loaded for absolute difference in precipitation.  
 
-```{r}
+```{r historical data}
 historical.variation.data <- as.data.frame(restricted.data[1])
 
 #FOR LIG
@@ -270,7 +289,7 @@ PCA.LIG.bioclim <- prcomp(historical.variation.data[c(
 as.data.frame(PCA.LIG.bioclim$rotation[,1:2]) %>% `colnames<-`(c("PC1.LIG", "PC2.LIG")) %>% pander()
 ```
 
-```{r, fig.width=8, fig.height=5}
+```{r PCA historical, fig.width=8, fig.height=5}
 #Now we can predict the PCA results: 
 PCA.LIG.predictions <- as.data.frame(predict(PCA.LIG.bioclim)*(-1)) #So that higher numbers mean more variation
 PCA.LIG.predictions <- rename(PCA.LIG.predictions, PC1.LIG = PC1,
@@ -300,7 +319,7 @@ grid.arrange(PCA.plot.m)
   
 **Figure S2:** The distribution of the two PCA components for the absolute difference in bioclimatic variables between today and the LIG.
 
-##Correlations between environmental predictors
+## Correlations between environmental predictors
 
 We checked the correlations between environmental predictors used in subsequent phylogenetic comparative analyses (PGLS models). Specifically we tested whether the following environmental variables are correlated:
 
@@ -312,7 +331,7 @@ We checked the correlations between environmental predictors used in subsequent 
 
 To check the correlations between the environmental predictors to be used in the PGLS models we inspected the following correlation plots with the correlation value plotted:
 
-```{r, fig.width=10, fig.height=10}
+```{r model predictor covariance, fig.width=10, fig.height=10}
 #Draw plot
 restricted.data$log.range.size <- log(restricted.data$range.size.m2)
 pairs(restricted.data[,c("log.range.size", "bioclim4", "residuals.PC1", "PC1.LIG", "NPP")], lower.panel=panel.smooth, upper.panel=panel.cor)
@@ -320,21 +339,21 @@ pairs(restricted.data[,c("log.range.size", "bioclim4", "residuals.PC1", "PC1.LIG
 
 **Figure S3:** The highest correlation is between Long term temperature variation and seasonal variation. However, this correlation is moderate (0.53) so we can be confident that collinearity with not be an issue for our PGLS models.
   
-##Sexual Dimorphism
+## Sexual Dimorphism
 
 The sexual dimorphism dataset looks to have an over-dispersed distribution (see phylogenic plot in manuscript). Unfortunately, transformations do not greatly improve the distribution. Our model fit is expected to be reduced by this but further transformations are not obvious and would risk problems of interpretation. In any case, the phylogenetically corrected models we employ do not assume normality in the response variable.
 
 _______________
 
-#Analysis
+# Analysis
 
-##Simple speciation measures: Diversification rate (DR) and Node Density (ND)
+## Simple speciation measures: Diversification rate (DR) and Node Density (ND)
 
 We obtained two tip-rate metrics of speciation using statistics derived from the properties of the nodes and branches along root-to-tip paths of the phylogeny. Node density (ND) is a simple statistic calculating the density of nodes from the phylogenetic root-to-tip, while the diversification rate (DR) [*e.g.*, @Jetz_2012; @quintero_2018; @Rabosky_fish_2018], is derived from the sum of edge lengths branching from a node, with each more basal node having the sum of lengths down-weighted.  
 
-The functions that generate these tip rates estimates are: ``calculate.log.es``, ``calculate.nd`` and ``calculate.tb``. Here they are run on 100 trees plus a full MCC tree of passerine birds based on 2500 sample trees of the posterior [@Jetz_2012]. This was done using the ``phanghorn`` package [@phangorn_2010].
+The functions that generate these tip rates estimates are: ``calculate.log.es``, ``calculate.nd`` and ``calculate.tb``. Here they are run on 1000 trees plus a full MCC tree of passerine birds based on 2500 sample trees of the posterior [@Jetz_2012]. This was done using the ``phanghorn`` package [@phangorn_2010].
 
-```{r}
+```{r speciation statistics}
 #Obtain DR (log(es)) estimates, by calling the calculate.dr function
 passerine.trees <- read.nexus('data/trees/Passerine_Trees_Full.nex')
 
@@ -353,17 +372,17 @@ tb.list <- readRDS("data/tb.list.rds")
 MCC.passerine <- read.tree('data/MCC.passerine.tre') #Tree based on 2500 samples of posterior
 ```
 
-To gain an estimate of variation between trees we can take the values and obtain a mean, variance and coefficient of variation (CV). We obtain a CV value to account for unequal variation at higher estimates. The CV is expressed as the ratio of the standard deviation ($\sigma$) to the mean ($\mu$) (converting to a percentage not needed):
+<!-- To gain an estimate of variation between trees we can take the values and obtain a mean, variance and coefficient of variation (CV). We obtain a CV value to account for unequal variation at higher estimates. The CV is expressed as the ratio of the standard deviation ($\sigma$) to the mean ($\mu$) (converting to a percentage not needed): -->
 
-$C_V = \frac{\sigma}{\mu} \times 100$
+<!-- $C_V = \frac{\sigma}{\mu} \times 100$ -->
 
-Furthermore, we can account for over-dispersion by obtaining a transformed version of CV. In such a case we can calculate CV for a log-normal distribution: 
+<!-- Furthermore, we can account for over-dispersion by obtaining a transformed version of CV. In such a case we can calculate CV for a log-normal distribution:  -->
 
-${\widehat {c_{\rm {v}}}}_{\rm {ln}}={\sqrt {\mathrm {e} ^{s_{\rm {ln}}^{2}}-1}}$
+<!-- ${\widehat {c_{\rm {v}}}}_{\rm {ln}}={\sqrt {\mathrm {e} ^{s_{\rm {ln}}^{2}}-1}}$ -->
 
-Given that our _ES_ value is log-transformed, the calculation of ${\widehat {c_{\rm {v}}}}_{\rm {ln}}$ is perhaps more ideal. As for _ND_ we can see from the a ``qqnorm`` plot that value of ND is normally distributed, therefore the regular CV is more appropriate for this distribution.
+<!-- Given that our _ES_ value is log-transformed, the calculation of ${\widehat {c_{\rm {v}}}}_{\rm {ln}}$ is perhaps more ideal. As for _ND_ we can see from the a ``qqnorm`` plot that value of ND is normally distributed, therefore the regular CV is more appropriate for this distribution. -->
 
-```{r, eval = FALSE}
+```{r speciation statistics wrangling, eval = FALSE}
 #For ND
 #transpose the list so that the elements are the species
 t.nd.list <- nd.list %>% purrr::transpose()
@@ -414,22 +433,17 @@ dr.summary <- dr.summary %>% rename(TipLabel = binomial, MCC.ND = nd, MCC.DR = e
 saveRDS(dr.summary, 'data/dr.summary.rds')
 ```
 
-```{r}
+```{r code for plot speciation rates RAW}
 dr.summary <- readRDS('data/dr.summary.rds')
 #Plot a summary of logES and TB with the DRs with their weightings
-dr.plot <- dr.summary %>% ggplot(aes(x = mean.loges, y = mean.nd, 
-                          fill = (1/(CV.nd))/sum((1/(CV.nd)))*100, 
-                      size = (1/(CV.loges))/sum((1/(CV.loges)))*100))+
+dr.plot <- dr.summary %>% ggplot(aes(x = MCC.DR, y = MCC.ND, 
+                          fill = MCC.DR, 
+                      size = MCC.ND))+
   geom_point(shape = 21, alpha = 0.5)+
   theme_minimal()+
-  geom_errorbarh(aes(xmin = mean.loges - 0.674*sqrt(var.loges), xmax = mean.loges + 0.674*sqrt(var.loges)), 
-                 size = 0.015)+
-  geom_errorbar(aes(ymin = mean.nd - 0.674*sqrt(var.nd), ymax = mean.nd + 0.674*sqrt(var.nd)), 
-                size = 0.015)+
   theme(legend.position="bottom")+
-  labs(size = 'Weight (%) [using DR]', y='Node Density [ND]', x= 'Log Diversification Rate [DR]', fill = 'Weight (%) [using ND] \n')+
-  scale_fill_distiller(guide = "colorbar", palette = "RdPu", direction = 1, breaks=c(0,0.015,.03),
-                           limits=c(0,0.03))
+  labs(size = 'Node Density [ND]', y='Node Density [ND]', x= 'Diversification Rate [DR]\n (log-equal splits)', fill = 'Diversification Rate [DR]')+
+  scale_fill_distiller(guide = "colorbar", palette = "RdPu", direction = 1)
 marginal.dr <-ggMarginal(
   p = dr.plot,
   type = 'density',
@@ -441,13 +455,13 @@ marginal.dr <-ggMarginal(
 ```
 
 
-```{r, fig.width=8, fig.height=6}
+```{r plot speciation rates RAW, fig.width=8, fig.height=6}
 grid.newpage()
 grid.draw(marginal.dr)
 ```
-**Figure S4:** $\lambda_{DR}$ and $\lambda_{ND}$ estimates of speciation rate are correlated. Furthermore, we see similar variation across each species in the estimates across 100 trees as the inverse of the coefficient of variation (weight) is approximately equivalent across all values of ND and DR (colours and size). Notably, these estimates speciation rate are relatively uncertain across all species, with 50 % CIs in both axes plotted.  
+**Figure S4:** $\lambda_{DR}$ and $\lambda_{ND}$ estimates of speciation rate are correlated for the MCC tree used in this study. Both of these response variables are normally distributed.
 
-```{r, warning=FALSE, fig.width=8, fig.height=10}
+```{r speciation rates plot two, warning=FALSE, fig.width=8, fig.height=10}
 restricted.data <- left_join(restricted.data, dr.summary, by = 'TipLabel')
 
 es.plot <- restricted.data %>% ggplot(aes(y = mean.loges, x = SDi, fill = mean.loges))+
@@ -473,14 +487,14 @@ grid.arrange(es.plot, nd.plot, tb.plot, nrow = 3)
 ```
 **Figure S5:** Scatter plots showing the raw relationship between sexual dichromatism (SDi) and speciation rates. Across all three measures of speciation the pattern and spread is similar, with no obvious relationship. Note that terminal branch length (mean.tb) was not used in the analysis.  
   
-##BAMM measures of speciation and extinction
+## BAMM measures of speciation and extinction
 
-###Set up BAMM parameters
+### Set up BAMM parameters
 
 For the use of BAMM we used the following code to generate the parameters across the 100 trees. Each parameter value is specified in this code chunk to ensure reproducibility. These same parameters were also used for the MCC tree (with the seed set at 2500).  
 
 
-```{r, eval = FALSE, results = 'hide'}
+```{r BAMM settings, eval = FALSE, results = 'hide'}
 name.passerine.tree <- names(passerine.trees)
 
 priors <- sapply(name.passerine.tree, function(x) {
@@ -717,12 +731,12 @@ for (x in name.passerine.tree) {generateControlFile(file = bammcontrolfile[[x]],
 ```
   
   
-###Run analysis
+### Run analysis
 
 
 BAMM can be run through the terminal through the following syntax: ``bamm -c control_tree_xxxx.txt``. To generate these commands we can use a loop function, from which we get:
 
-```{r, eval = FALSE}
+```{r BAmm export, eval = FALSE}
 bamm.commands <- list()
 for (x in name.passerine.tree) {
   bamm.commands[x] <- paste("bamm -c control_", x, ".txt", sep="")
@@ -733,13 +747,13 @@ for (x in name.passerine.tree) {
 The analysis was run over multiple CPU's, each generating a respective MCMC and EventData output. Due to the size of the event data file (~ 50 Gb in total) they are not included as supplementary material here. However we have simplified the event data objects into tip rate estimates of the mean and variance across 100 trees + MCC. 
   
 
-###Read in the event data and extract tip data
+### Read in the event data and extract tip data
 
 Now we have a series of trees and event data we can read in. Firstly and most importantly let's check for convergence in the MCC tree through the following:
 
 **Table S3:** Effective sample size (ESS) for the two key BAMM parameters (number of evolutionary shifts and log-Likelihood) for the run on the MCC indicate that BAMM converges (ESS > 200). 
 
-```{r}
+```{r BAMM inspection}
 #Read in the tree and MCMC to check for convergence 
 MCC.BAMM.tree  <- read.tree("data/BAMM_MCC/MCC.passerine.tre") #Same as other MCC tree already loaded
 MCC.BAMM.mcmc <- read.csv( "data/BAMM_MCC/tree_MCC_mcmc_out.txt" , stringsAsFactors=F)
@@ -760,14 +774,14 @@ cbind(effectiveSize(postburn$N_shifts), effectiveSize(postburn$logLik)) %>% `col
 Those values are well above 200, so we can use the MCC data in analysis! We can also check the convergence of BAMM across 100 runs of BAMM. The Raw MCMCs are not included in this file or repository but we can read in a dataframe that has extracted the ESS for each of the runs.
 
 **Table S4:** For the 100 trees that BAMM was run on effective sample size (ESS) for the two key BAMM parameters (number of evolutionary shifts and log-Likelihood) also indicates that BAMM converges with the minimum for each parameter across the 100 trees being over 200.
-```{r}
+```{r ESS}
 ESS <- readRDS('data/ESS.rds')
 summary(ESS) %>% pander()
 ```
 
 Given that it appears BAMM converges we can we can make a data frame with the mean and variance for extinction and speciation tip rates from the large event data set for the MCC with the following code and then plot the variation we see in tip-rates.  
 
-```{r}
+```{r BAMM wrangling}
 # Read in Event Data
 MCC.BAMM.ED <- getEventData(MCC.BAMM.tree,  "data/BAMM_MCC/tree_MCC_event_data.txt", burnin=0.1, nsamples=1000)
 saveRDS(MCC.BAMM.ED, 'data/MCC.BAMM.ED.rds')
@@ -814,8 +828,9 @@ MCC.BAMM.df <- BAMM.extraction.function(MCC.BAMM.ED)
 saveRDS(MCC.BAMM.df, 'data/MCC.BAMM.df.rds')
 ```
 
-```{r}
+```{r BAMM plot}
 MCC.BAMM.df <- readRDS('data/MCC.BAMM.df.rds')
+MCC.BAMM.df$CV.lambda <- sqrt(exp(MCC.BAMM.df$var.lambda) - 1)*100
 #Plot a summary of logES and TB with the DRs with their weightings
 BAMM.MCC.plot <- MCC.BAMM.df %>% ggplot(aes(x = mean.lambda, y = mean.mu, 
                           fill = 1/var.lambda, 
@@ -847,22 +862,22 @@ BAMM.variance <- ggExtra::ggMarginal(
 ```
 
 
-```{r, fig.width=10, fig.height=6}
+```{r BAMM plot print, fig.width=10, fig.height=6}
 grid.newpage()
 grid.draw(BAMM.variance)
 ```
 **Figure S6:** The tip-rate estimates for BAMM are highly variable within each run of BAMM. Across most species there is high variability in the posterior distribution of tip-rate estimates. Here we show mean values, weights based on the variance and 50 % CIs. 
 
 
-###Analysis of BAMM results
+### Analysis of BAMM results
 
 Given the high variability in tip-rate estimates from the above plot, below we peformed some diagnostics on BAMM to demonstrate that the variability is unlikely an error in sampling or parameters, rather an inherent aspect of BAMM. The following is not inherently necessary to understand the conclusions drawn from the paper, however they do raise a set of methodological questions about BAMM that warrant further investigation.
 
-####Credible number of shifts
+**Credible number of shifts**
 
 To plot the credible shift set, we need the prior distribution on the number of rate shifts (this is generated internally by BAMMtools). We can then estimate the credible set of rate shifts using the BAMMtools function ``credibleShiftSet``:
 
-```{r}
+```{r CSS}
 css <- credibleShiftSet(MCC.BAMM.ED, expectedNumberOfShifts=100, threshold=5, set.limit = 0.95)
 
 #Now we obtain the number of distinct shifts: (Out of 1000 samples this is super high, essentially each one is distinct)
@@ -872,18 +887,18 @@ summary(css)
 
 Notably, each of the top shifts has low probability, indicating that out of the entire posterior sample we cannot differentiate which shift configuration is more likely. Based on the following estimates of the BayesFactor, we are confident that the number of shifts is non-zero, however it is still quite a wide distribution.  
 
-```{r} 
+```{r CSS two} 
 round(computeBayesFactors(MCC.BAMM.mcmc, expectedNumberOfShifts=100, burnin=0.1)[,1], digits = 2)
 ```
 
-```{r, fig.width = 8, fig.height = 5}
+```{r plot prior BAMM, fig.width = 8, fig.height = 5}
 plotPrior(MCC.BAMM.mcmc, expectedNumberOfShifts=100)
 ```
 **Figure S7:** The apparent convergence of the number of shifts in the posterior is at odds with the variability seen in the CSS and although there is greater certainty in the number of shifts being within the range above, the position of those shifts remains variable.  
 
 We can compare our run of BAMM against @Harvey_2017 who used BAMM on a genetic-only MCC tree with different parameters.  
 
-```{r, fig.width=10, fig.height=6}
+```{r Hackett Data, fig.width=10, fig.height=6}
 load('data/Hackett_split_eventsample.rda')
 css3 <- credibleShiftSet(ed, expectedNumberOfShifts=100, threshold=5, set.limit = 0.95)
 
@@ -904,6 +919,8 @@ Harvey.BAMM.df %>% ggplot(aes(x = mean.lambda, y = mean.mu,
   labs(size = 'Weight [using Lambda]', y='Log Extinction [Mu]', x= 'Log Speciation [Lambda]', fill = 'Weight [using Mu] \n')+
   scale_fill_distiller(guide = "colorbar", palette = "Reds", direction = 1)
 
+Harvey.vs.us <- full_join(MCC.BAMM.df %>% select(TipLabel, mean.lambda), Harvey.BAMM.df %>% select(TipLabel, Harvey.lambda = mean.lambda), by = "TipLabel")
+saveRDS(Harvey.vs.us, "data/Harvey.vs.us.rds")
 # BAMM.variance <- ggExtra::ggMarginal(
 #   p = BAMM.MCC.plot,
 #   type = 'density',
@@ -915,6 +932,8 @@ Harvey.BAMM.df %>% ggplot(aes(x = mean.lambda, y = mean.mu,
 ```
 **Figure S8:** Based on the event data from the BAMM run by @Harvey_2017 we find that in both our case and theirs the tip-rate estimates for many species are extremely variable across samples of the posterior probability. Here we present mean estimates with 50 % CIs.
   
+In comparison to $\lambda_{DR}$, the value of $\lambda_{BAMM}$ was the _mean_ drawn from a posterior distribution (*n* = 1,000) of BAMM generations, thus estimates of $\lambda_{BAMM}$ (and $\mu_{BAMM}$) have an added level of variation. To account for this variation, weights (using the inverse of the variance) were used for the PGLS models. From 1,000 posterior samples of the MCC BAMM run, the coefficient of variation (*CV*) for all log-rates of $\lambda_{BAMM}$ was relatively low (*mean CV* = `r round(mean(MCC.BAMM.df$CV.lambda), digits = 2)`, *median CV* = `r round(median(MCC.BAMM.df$CV.lambda), digits = 2)` ; *see* Figures S6 and Figure S8). Despite the convergence of the BAMM model in all runs --- where effective sample sizes of the number of shifts and log-likelihood were all greater than 200 (Table S3,Table S4) --- we found that the unique combinations of rate shifts across the large phylogenetic tree (*n* = 5,966 species) were high. This means that although the number of rate shifts reached convergence ($median = 59$; Figure S7), the locations of the rate shifts (*i.e.* the credible shift set) across the tree are highly heterogeneous. The variability in the locations for the shift configurations is a likely source of uncertainty in downstream tip-rates used as the response variable in PGLS models. Notably, the 95 % HPD interval for model estimates using BAMM rates from 100 trees was about 20-fold the 95 % confidence intervals of the estimate from the MCC tree; whereas for $\lambda_{DR}$ and $\lambda_{ND}$, the HPD 95 % interval width was equal to or less than the MCC 95 % CI (Table S9).    
+
 <!-- ###Time-constant -->
 
 <!-- We also ran a time-constant MCC of BAMM -->
@@ -957,7 +976,7 @@ Harvey.BAMM.df %>% ggplot(aes(x = mean.lambda, y = mean.mu,
 <!-- ``` -->
 
 
-##PGLS Models
+## PGLS Models
 
 The method behind running the PGLS models is as follows: 
   
@@ -972,11 +991,11 @@ The method behind running the PGLS models is as follows:
 **5:** Repeat this step for DR, ND, BAMM-speciation and BAMM-extinction.
   
   
-###PGLS Models on DR and ND
+### PGLS Models on DR and ND
 
 Using ``corPagel`` we can estimate the phylogenetic signal for a model with all predictors (interactions do not appear to affect the estimate of $\lambda$): 
 
-```{r, eval = FALSE}
+```{r MCC DR and ND, eval = FALSE}
 #Prune tree
 pruned.MCC.tree <- drop.tip(MCC.passerine,MCC.passerine$tip.label[-match(restricted.data$TipLabel, MCC.passerine$tip.label)])
 
@@ -1009,7 +1028,7 @@ saveRDS(MCC.ND.corPagel, 'data/MCC.ND.corPagel.rds')
 ```
 
 Inspect the $\lambda$ value, which can then be fixed for successive models.
-```{r, warning=FALSE}
+```{r MCC DR and ND lambda, warning=FALSE}
 MCC.DR.corPagel <- readRDS('data/MCC.DR.corPagel.rds')
 MCC.ND.corPagel <- readRDS('data/MCC.ND.corPagel.rds')
 MCC.DR.corPagel[["modelStruct"]][["corStruct"]] %>% `names<-`("DR lambda") %>% pander()
@@ -1018,7 +1037,7 @@ MCC.ND.corPagel[["modelStruct"]][["corStruct"]] %>% `names<-`("ND lambda") %>% p
 
 The lambda is high and similar to if we assume Brownian Motion $\lambda = 1$.However, given the large sample size, this difference may have an effect on the results so we included it as a fixed value for $\lambda$ in all successive models. 
 
-```{r, eval = FALSE}
+```{r MCC DR ND models, eval = FALSE}
 #Run model for DR
 MCC.DR <- gls(MCC.DR ~ SDi
                          + log(range.size.m2)
@@ -1076,7 +1095,7 @@ saveRDS(dredged.DR.model, "data/dredged.DR.model.rds")
 ```
 
 **Table S5:** The dredged models both show the top model is one with no interactions, with $\delta AICc > 4$ in both cases. We can be reasonably confident that interactions are unlikely to affect the pattern of speciation we see in passerine birds.
-```{r}
+```{r MCC DR ND model tables}
 dredged.DR.model <- readRDS("data/dredged.DR.model.rds")
 dredged.ND.model <- readRDS("data/dredged.ND.model.rds")
 kable(dredged.DR.model, "html", caption = "DR Dredge Table") %>%
@@ -1090,7 +1109,7 @@ kable(dredged.ND.model, "html", caption = "ND Dredge Table") %>%
   
 From the dredged model list we can see that the top model is one with no interactions. We ran this model on the MCC tree and 100 trees, noting that each model uses a unique set of values for $\lambda_{DR}$/$\lambda_{ND}$ and a unique tree in the correlation structure.
 
-```{r, eval=FALSE}
+```{r MCC ND DR top, eval=FALSE}
 #In both cases the top model is 1/2/3/4/5/6 no interaction terms. With no models within delta < 4: 
 
 #Run model for DR
@@ -1188,10 +1207,9 @@ saveRDS(MCC.ND.top, 'data/MCC.ND.top.rds')
   
 From these models we obtained a distribution of the estimates for the models alongside the 95 % CIs of the MCC model. This enabled us to show the variation between trees, and the variation associated with the top MCC model. Given the variability across trees we ran 1000 ND and DR models, each allowed to estimate a phylogenetic signal ($\lambda$). The models were saved as an `.rds` object and read back into R with key coefficients extracted. Below we provide the code for this: 
 
-```{r, eval = F}
-##########################################################
-####### Read in DR models and extract estimates: #########
-##########################################################
+```{r trycatch all models, eval = F}
+
+#Read in DR models and extract estimates:
 
 #We ran DR and ND models on 1000 trees
 files.DR.SD <- list.files(path = "/Users/justincally/Dropbox/Runs Spartan/DR_SD/", pattern = "\\.rds$", full.names = TRUE) #1000 models
@@ -1216,9 +1234,8 @@ lapply(files.DR.SD, function(x) {
 DR.pgls.summary <- bind_rows(df) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name"))
 #saveRDS(DR.pgls.summary, "data/DR.pgls.summary.rds") #Save a simple df with the model and coeff
 
-##########################################################
-####### Read in ND models and extract estimates: #########
-##########################################################
+
+# Read in ND models and extract estimates
 
 files.ND.SD <- list.files(path = "/Users/justincally/Dropbox/Runs Spartan/ND_SD/", pattern = "\\.rds$", full.names = TRUE) #1000 models
 df <- list()
@@ -1244,7 +1261,7 @@ ND.pgls.summary <- bind_rows(df) %>% `colnames<-`(c("Parameter", "Estimate", "LC
 ```
 
 
-```{r, fig.height = 8, fig.width = 4, message = FALSE, warning = FALSE}
+```{r  DR and ND plots for model, fig.height = 8, fig.width = 4, message = FALSE, warning = FALSE}
 #Read in the 1000 tree summary df and the MCC tree model
 DR.pgls.summary <- readRDS("data/DR.pgls.summary.rds")
 MCC.DR.top <- readRDS('data/MCC.DR.top.rds')
@@ -1352,13 +1369,13 @@ ND.plot <- ND.plot + geom_errorbarh(data = MCC.ND.summary %>% filter(Parameter !
 
 
 
-##PGLS Models on BAMM estimates
+## PGLS Models on BAMM estimates
 
 Using the previously generated BAMM dataframe we undertook model selection for speciation and extinction. The process is similar to that used on DR and ND, except given the use of a Bayesian approach in BAMM we can make use of varying levels of uncertainty between tips (species) by constructing a weighted model, where the weight is the inverse of the variance, such that more precise estimates of speciation or extinction at a given tip (species) holds higher weight in the model.  
 
 Based on preliminary findings we found that Pagel's lambda was = 1 and running ``corPagel`` lead to problems of convergence. Therefore we ran the following models assuming Brownian Motion with ``corBrownian``.
 
-```{r, eval = FALSE}
+```{r BAMM mcc dredge, eval = FALSE}
 MCC.BAMM.df <- readRDS('data/MCC.BAMM.df.rds')
 
 #Create model dataframe for use in models
@@ -1436,7 +1453,7 @@ saveRDS(dredged.MCC.mu, "data/dredged.MCC.mu.rds")
 ```
 
 **Table S6:** The dredged models for BAMM speciation and BAMM extinction both show the top model is one with no interactions, with $\delta AICc > 4$. This is the same situation as DR/ND models (see above).
-```{r}
+```{r MCC BAMM table}
 dredged.MCC.lambda <- readRDS("data/dredged.MCC.lambda.rds")
 dredged.MCC.mu <- readRDS("data/dredged.MCC.mu.rds")
 kable(dredged.MCC.lambda, "html", caption = "BAMM-Speciation Dredge Table") %>%
@@ -1450,7 +1467,7 @@ kable(dredged.MCC.mu, "html", caption = "BAMM-Extinction Dredge Table") %>%
   
 Given that we ran models weighted according to the variance of the response ($\lambda_{BAMM}$ and $\mu_{BAMM}$), we checked to see whether a weighted model is favourable to an unweighted model using an ``anova`` to compare AIC values.
 
-```{r, eval=FALSE}
+```{r MCC BAMM top, eval=FALSE}
 #Run the top model for the MCC
 #Run model for ND
 MCC.Lambda.top <- gls(mean.lambda ~ SDi
@@ -1505,7 +1522,7 @@ saveRDS(MCC.Mu.top.unweighted, 'data/MCC.Mu.top.unweighted.rds')
 ```
 
 **Table S6:** Models with a set of weights for the response based on the inverse of the variance of the posterior distribution in $\lambda_{BAMM}$ and $\mu_{BAMM}$ have much lower AIC values, indicating that the weighting scheme improves the fit of the model. In any case, we found that an unweighted model did not change qualitative results. 
-```{r}
+```{r MCC BAMM AICs}
 MCC.Lambda.top <- readRDS('data/MCC.Lambda.top.rds')
 MCC.Lambda.top.unweighted <- readRDS('data/MCC.Lambda.top.unweighted.rds')
 MCC.Mu.top <- readRDS('data/MCC.Mu.top.rds')
@@ -1518,7 +1535,7 @@ anova(MCC.Mu.top, MCC.Mu.top.unweighted) %>% pander(split.table = Inf)
   
 We ran the top (no interactions) model on the 100 trees, each with unique estimates of speciation and extinction from the BAMM runs.
 
-```{r, eval=FALSE}
+```{r MCC BAMM wrangling, eval=FALSE}
 #Read in the BAMM data for the 100 trees
 BAMM.df <- readRDS('data/BAMM.df.rds')
 
@@ -1577,7 +1594,7 @@ saveRDS(BAMM.mu.pgls.models, "data/BAMM.mu.pgls.models.rds")
 ```
 
 
-```{r, warning=F, error = F, fig.height = 8, fig.width = 4}
+```{r BAMM plots, warning=F, error = F, fig.height = 8, fig.width = 4}
 BAMM.lambda.pgls.models <- readRDS("data/BAMM.lambda.pgls.models.rds")
 
 BAMM.lambda.pgls.summary <- lapply(BAMM.lambda.pgls.models, function(x) {
@@ -1729,9 +1746,9 @@ BAMM.mu.plot <- BAMM.mu.plot + geom_errorbarh(data = MCC.mu.summary %>% filter(P
   ggtitle("BAMM Extinction")
 ```
 
-###PGLS Model Summary
+### PGLS Model Summary
 
-```{r, fig.width=12, fig.height=9}
+```{r Model Summary, fig.width=12, fig.height=9}
 grid.arrange(
   symmetrise_scale(DR.plot, "x"),
   symmetrise_scale(ND.plot, "x"),
@@ -1743,7 +1760,7 @@ grid.arrange(
 **Figure S9:** This figure is the same basic figure as seen in the manuscript (Figure 1). It provides model estimates for four response variables across 100 random trees alongside the MCC tree.
 
 **Table S7:** The estimates of the MCC models plotted above are based on the following data tables.
-```{r}
+```{r Values For Models}
 MCC.DR.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates", split.table = Inf)
 MCC.ND.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates", split.table = Inf)
 MCC.lambda.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Speciation Estimates", split.table = Inf)
@@ -1753,7 +1770,7 @@ MCC.mu.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>
 From the estimates of 100 trees we calculated Highest posterior density (HPD) intervals. Note that these do no account for the CI of each estimate. Thus it is a more a representation of tree uncertainty than model uncertainty. 
 
 **Table S8:**  HPD intervals calculated for the above figure (*i.e.* models using RGB values of sexual dichromatism). The HPD range is determined using the ``hdi`` function with a 95 % credible interval. These intervals do not take into account the variance associated with each interval and thus are not an estimate of model precision. Intervals not overlapping zero suggest that 95 % of trees from the posterior generate a model estimate for the given parameter that is in the same direction (+ or -).
-```{r, warning = FALSE}
+```{r HPD, warning = FALSE}
 hpd.DR.top <- list()
 for(x in unique(DR.pgls.summary$Parameter)) {
 hpd.DR.top[[x]] = hdi(DR.pgls.summary %>% filter(Parameter == x) %>% dplyr::select("Estimate"))
@@ -1799,7 +1816,7 @@ hpd.Mu.top %>% pander(split.table = Inf, digits = 3, caption = "BAMM Extinction 
 From the HPD 95 % intervals and the intervals for the 95 % CI we can gain an indication of how much variability there is within a model in comparison to variability between trees. To do this we calculated the width of the HPD interval relative to the 95 % CI interval from the MCC tree.  
 
 **Table S9:** Model estimates from $\lambda_{BAMM}$ and $\mu_{BAMM}$ tip-rate estimates show high levels of variability between trees relative to estimates from $\lambda_{DR}$ and $\lambda_{ND}$. The interval ratio is calculated as the width of the HPD 95 % CI relative to the MCC 95 % CI. A value of 1 suggests that model estimates from 95 % of the trees fall within the MCC 95 % CI. Here, the large values for the estimates from BAMM tip-rates suggest that there is high variation in tip-rate estimates across trees that is not see within the DR and ND models.
-```{r}
+```{r HPD CI interval ratio}
 hpd.DR.top2 <- hpd.DR.top %>% t() %>% as.data.frame() %>% rownames_to_column(var = "Parameter")
 hpd.DR.top2$HPD.Interval <- hpd.DR.top2$Upper - hpd.DR.top2$Lower
 DR.intervals <- left_join(hpd.DR.top2, MCC.DR.summary, by = "Parameter")
@@ -1835,11 +1852,11 @@ plyr::join_all(list(DR.intervals %>% select(Parameter, DR.IntervalRatio),
 ```
 
 
-##Subsetted analysis with spectrophotometry data
+## Subsetted analysis with spectrophotometry data
 
 Using the dataset from @Armenta_2008 we conducted the analysis on a subset of species for which dichromatism values were derived from spectrophotometry data. The measure of dichromatism is a difference measure between the sexes, based on a model of bird colour vision. To make this dataset comparable with the RGB measure of dichromatism, we use the absolute difference between the sexes; thereby making the scale from monochromatism to dichromatism rather than female colouration to male colouration.  
 
-```{r, warning = FALSE, fig.width=10, fig.height=6}
+```{r Armenta inspection data, warning = FALSE, fig.width=10, fig.height=6}
 #Read in Armenta data
 Armenta.data <- read.csv('data/Armenta_2008.csv', stringsAsFactors = F)
 MCC.BAMM.df <- readRDS('data/MCC.BAMM.df.rds')
@@ -1871,7 +1888,7 @@ ggExtra::ggMarginal(
 **Figure S10:** There is a correlation between the RGB measures and the Spectophotometry measures. The RGB measures seem to be more noisy around the lower values.  
 
 R-squared and correlation for relationship between RGB and Spectrophotometry Data:
-```{r}
+```{r Armenta r val}
 data_frame(
 R2 = summary(lm(SDi ~ Colour.discriminability,
    data = MCC.Armenta.model.data))$r.squared,
@@ -1879,7 +1896,7 @@ r = cor(MCC.Armenta.model.data$SDi, MCC.Armenta.model.data$Colour.discriminabili
 ```
 
 Run PGLS model for the data
-```{r, eval = FALSE}
+```{r Armenta models, eval = FALSE}
 #Prune tree
 pruned.MCC.Armenta.tree <- drop.tip(MCC.passerine,MCC.passerine$tip.label[-match(MCC.Armenta.model.data$TipLabel, MCC.passerine$tip.label)])
 
@@ -1954,7 +1971,7 @@ MCC.Extinction.Armenta.global <- gls(mean.mu ~ Colour.discriminability
 ```
 
 
-```{r, eval = FALSE}
+```{r Armenta cluster, eval = FALSE}
 #Set up cluster
 cores<-8
 clusterType <- if(length(find.package("snow", quiet = TRUE))) "SOCK" else "PSOCK"
@@ -1989,7 +2006,7 @@ saveRDS(Armenta.dredged.extinct.model, 'data/Armenta.dredged.extinct.model.rds')
 
 
 **Table S10:** The dredged models using a subset of species for which sexual dichromatism was measured using spectrophotometry. All four show the top model is one with no interactions, with $\delta AICc > 4$.
-```{r}
+```{r Armenta dredged}
 Armenta.dredged.ND.model <- readRDS("data/Armenta.dredged.ND.model.rds")
 Armenta.dredged.DR.model <- readRDS("data/Armenta.dredged.DR.model.rds")
 Armenta.dredged.spec.model <- readRDS("data/Armenta.dredged.spec.model.rds")
@@ -2015,7 +2032,7 @@ kable(Armenta.dredged.extinct.model, "html", caption = "BAMM Extinction Spectrop
 
 Run the top model and 100 models for each one: 
 
-```{r, eval = FALSE}
+```{r Armenta top, eval = FALSE}
 #In both cases the top model is 1/2/3/4/5/6 no interaction terms. With no models within delta < 4: 
 
 #Run model for DR
@@ -2180,7 +2197,7 @@ saveRDS(Armenta.BAMM.mu.pgls.models, "data/Armenta.BAMM.mu.pgls.models.rds")
 
 Using the MCC models as well as the 100 PGLS models we can generate the plots similar to Figure S8:
 
-```{r, fig.height = 8, fig.width = 4, warning=FALSE}
+```{r Armenta plots, fig.height = 8, fig.width = 4, warning=FALSE}
 
 Armenta.DR.pgls.models <- readRDS("data/Armenta.DR.pgls.models.rds")
 Armenta.MCC.DR.top <- readRDS('data/Armenta.MCC.DR.top.rds')
@@ -2240,7 +2257,6 @@ Armenta.DR.plot <- Armenta.DR.plot + geom_errorbarh(data = Armenta.MCC.DR.summar
         plot.margin=unit(c(.5,.5,.5,.5),"cm"))+
   ggtitle("Armenta DR")
 
-####################################
 #For ND
 
 Armenta.ND.pgls.models <- readRDS("data/Armenta.ND.pgls.models.rds")
@@ -2292,8 +2308,6 @@ Armenta.ND.plot <- Armenta.ND.plot + geom_errorbarh(data = Armenta.MCC.ND.summar
         plot.margin=unit(c(.5,.5,.5,.5),"cm"))+
   ggtitle("Armenta ND")
 
-######################
-
 #For Lambda
 Armenta.BAMM.lambda.pgls.models <- readRDS("data/Armenta.BAMM.lambda.pgls.models.rds")
 Armenta.MCC.Lambda.top <- readRDS('data/Armenta.MCC.Lambda.top.rds')
@@ -2343,8 +2357,6 @@ Armenta.Lambda.plot <- Armenta.Lambda.plot + geom_errorbarh(data = Armenta.MCC.L
         axis.text.x = element_text(size = 7),
         plot.margin=unit(c(.5,.5,.5,.5),"cm"))+
   ggtitle("Armenta BAMM Speciaton")
-
-######################
 
 #For Mu
 
@@ -2400,7 +2412,7 @@ Armenta.Mu.plot <- Armenta.Mu.plot + geom_errorbarh(data = Armenta.MCC.Mu.summar
 
 Plot the results
 
-```{r, fig.width=12, fig.height=9}
+```{r Armenta plot plots, fig.width=12, fig.height=9}
 grid.arrange(symmetrise_scale(Armenta.DR.plot, "x"),
              symmetrise_scale(Armenta.ND.plot, "x"),
              symmetrise_scale(Armenta.Lambda.plot, "x"), 
@@ -2410,7 +2422,7 @@ grid.arrange(symmetrise_scale(Armenta.DR.plot, "x"),
 **Figure S11:** Measures of sexual dichromatism using spectrophotometry do not change the main patterns. This dataset is a subset of the complete dataset (n = 581), thus drawing conclusions for the other predictors (*e.g.* borderline long term temperature variation and spatial temperature variation) potentially risks type I error. Additionally, these environmental predictors were not measured differently in this analysis compared to the analysis using RGB measures of dichromatism for all species so we refrain from drawing conclusions on the effects of the environmental predictors based on this smaller dataset.
 
 **Table S11:** MCC estimates from the above plot are presented as numerical values below. 
-```{r}
+```{r Armenta moel summary}
 Armenta.MCC.DR.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates from Spec measures")
 Armenta.MCC.ND.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates from Spec measures")
 Armenta.MCC.Lambda.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Speciation Estimates from Spec measures")
@@ -2419,7 +2431,7 @@ Armenta.MCC.Mu.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption
 
 
 **Table S12:**  HPD intervals calculated for the above figure (*i.e.* models using Spectrophotometry values of sexual dichromatism). These intervals do not take into account the variance associated with each estimate and thus are not an estimate of model precision. Intervals not overlapping zero suggest that 95 % of trees from the posterior generate a model estimate for the given parameter that are in the same direction (+ or -). These intervals are calculated in the same way as in Table S7.
-```{r, warning = FALSE}
+```{r Armenta HPD, warning = FALSE}
 Armenta.hpd.DR.top <- list()
 Armenta.DR.pgls.summary <- na.omit(Armenta.DR.pgls.summary)
 for(x in unique(Armenta.DR.pgls.summary$Parameter)) {
@@ -2440,7 +2452,6 @@ Armenta.hpd.ND.top <- bind_rows(Armenta.hpd.ND.top) %>% `rownames<-`(c("Lower", 
 
 saveRDS(Armenta.hpd.ND.top, 'data/Armenta.hpd.ND.top.rds')
 
-###############
 Armenta.hpd.Lambda.top <- list()
 Armenta.Lambda.pgls.summary <- na.omit(Armenta.Lambda.pgls.summary)
 for(x in unique(Armenta.Lambda.pgls.summary$Parameter)) {
@@ -2449,7 +2460,6 @@ Armenta.hpd.Lambda.top[[x]] = hdi(Armenta.Lambda.pgls.summary %>% filter(Paramet
 Armenta.hpd.Lambda.top <- bind_rows(Armenta.hpd.Lambda.top) %>% `rownames<-`(c("Lower", "Upper")) 
 saveRDS(Armenta.hpd.Lambda.top, 'data/Armenta.hpd.Lambda.top.rds')
 
-################
 Armenta.hpd.Mu.top <- list()
 Armenta.Mu.pgls.summary <- na.omit(Armenta.Mu.pgls.summary)
 for(x in unique(Armenta.Mu.pgls.summary$Parameter)) {
@@ -2465,7 +2475,7 @@ Armenta.hpd.Lambda.top %>% pander(split.table = Inf, digits = 3, caption = "Arme
 Armenta.hpd.Mu.top %>% pander(split.table = Inf, digits = 3, caption = "Armenta BAMM Extinction HPD Interval")
 ```
 
-##Analysis using male-biased measure of sexual selection
+## Analysis using male-biased measure of sexual selection
 
 Sexual dichromatism is expected to be a good measure of sexual selection strength in birds. However, the relationship between sexual dichromatism and male-biased measures of sexual selection (social mating system, sexual size dimorphism and paternal care) is expected to be relatively noisy given the precision of the measurement used [@Dale_2015]. Here we use a dataset of sexual selection for 2,465 species of the 5,812 species with sexual dichromatism scores from RGB measures. This male-biased sexual selection score is based on three components, combined in a phylogenetic PCA (ppca) with the following loadings:
 
@@ -2475,7 +2485,7 @@ Sexual dichromatism is expected to be a good measure of sexual selection strengt
 
 As such, species with high values for this score are expected to have high male-biased sexual selection (high dimorphism, high polygyny and low paternal care). PGLS models using this dataset were run using the same process as above.  
 
-```{r, warning = FALSE, fig.width=10, fig.height=6}
+```{r SS subset inspection, warning = FALSE, fig.width=10, fig.height=6}
 SS.subset <- plumage.scores %>% filter(Sexual_selection_ppca != "NA")
 SS.subset <- inner_join(SS.subset, restricted.data %>% dplyr::select(TipLabel, binomial, range.size.m2, bioclim4, residuals.PC1, PC1.LIG, NPP, MCC.DR, MCC.ND), by = "TipLabel")
 SS.subset <- inner_join(SS.subset, MCC.BAMM.df, by = "TipLabel")
@@ -2487,7 +2497,7 @@ SS.subset %>% ggplot(aes(x = SDi, y = Sexual_selection_ppca))+
 ```
 **Figure S12:** The relationship between absolute sexual dichromatism and male-baised sexual selection. Although positively correlated, the distribution is very noisy with some species having high sexual dichromatism and low male-biased sexual selection and vice versa. 
 
-```{r}
+```{r SS R val}
 data_frame(
 R2 = summary(lm(SDi ~ Sexual_selection_ppca,
    data = SS.subset))$r.squared,
@@ -2495,7 +2505,7 @@ r = cor(SS.subset$SDi, SS.subset$Sexual_selection_ppca)) %>% pander(digits = 2)
 ```
 
 
-```{r, eval = FALSE}
+```{r SS MCC, eval = FALSE}
 #Prune tree
 pruned.MCC.Subset.tree <- drop.tip(MCC.passerine,MCC.passerine$tip.label[-match(SS.subset$TipLabel, MCC.passerine$tip.label)])
 
@@ -2571,7 +2581,7 @@ MCC.Extinction.Subset.global <- gls(mean.mu ~ Sexual_selection_ppca
                 method = "REML")
 ```
 
-```{r, eval = FALSE}
+```{r Dredge SS, eval = FALSE}
 #Set up cluster
 cores<-8
 clusterType <- if(length(find.package("snow", quiet = TRUE))) "SOCK" else "PSOCK"
@@ -2606,7 +2616,7 @@ saveRDS(Subset.dredged.spec.model, 'data/Subset.dredged.extinct.model.rds')
   
 **Table S13:** All top models ($\delta AICc > 4$) using male-biased sexual selection measures do not contain interactions between sexual selection and the environmental variables. Thus interaction terms were not included in further analysis.
 
-```{r}
+```{r Table for SS}
 Subset.dredged.ND.model <- readRDS("data/Subset.dredged.ND.model.rds")
 Subset.dredged.DR.model <- readRDS("data/Subset.dredged.DR.model.rds")
 Subset.dredged.spec.model <- readRDS("data/Subset.dredged.spec.model.rds")
@@ -2631,7 +2641,7 @@ kable(Subset.dredged.extinct.model, "html", caption = "BAMM Extinction Male-bias
 ```
   
 
-```{r, eval = FALSE}
+```{r SS MCC Top, eval = FALSE}
 #Run model for DR
 Subset.MCC.DR.top <- gls(MCC.DR ~ Sexual_selection_ppca
                          + log(range.size.m2)
@@ -2799,16 +2809,14 @@ saveRDS(Subset.BAMM.mu.pgls.models, "data/Subset.BAMM.mu.pgls.models.rds")
 
 The phylogenetic signal from the DR model is ~0.97. The other models had phylogenetic signals ~ 1, as such they were fixed at 1 to avoid problems of convergence.
 
-```{r, warning = FALSE}
+```{r SS MCC lambda, warning = FALSE}
 Subset.MCC.DR.top <- readRDS('data/Subset.MCC.DR.top.rds')
 Subset.MCC.DR.top[["modelStruct"]][["corStruct"]] %>% `names<-`("DR lambda") %>% pander()
 ```
 
-```{r, eval = F}
+```{r Read in Models, eval = F}
 
-##########################################################
-####### Read in DR models and extract estimates: #########
-##########################################################
+#Read in DR models and extract estimates:
 
 #We ran DR and ND models on 1000 trees
 files.DR.SS <- list.files(path = "/Users/justincally/Dropbox/Runs Spartan/DR_SS/", pattern = "\\.rds$", full.names = TRUE) #1000 models
@@ -2886,11 +2894,10 @@ lapply(names(c.list), function(x) {
 Subset.ND.pgls.summary <- bind_rows(df) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI", "SE", "tval", "pval" , "lambda" ,"model_name"))
 #saveRDS(Subset.ND.pgls.summary, "data/Subset.ND.pgls.summary.rds") #Save a simple df with the model and coeff
 rm(c.list)
-############################
 ```
 
 
-```{r}
+```{r SS plots}
 Subset.DR.pgls.summary <- readRDS("data/Subset.DR.pgls.summary.rds")
 Subset.ND.pgls.summary <- readRDS("data/Subset.ND.pgls.summary.rds")
 
@@ -2955,7 +2962,6 @@ Subset.DR.plot <- Subset.DR.plot + geom_errorbarh(data = Subset.MCC.DR.summary %
         plot.margin=unit(c(.5,.5,.5,.5),"cm"))+
   ggtitle("Male-Bias SS DR")
 
-####################################
 #For ND
 
 Subset.MCC.ND.top <- readRDS('data/Subset.MCC.ND.top.rds')
@@ -3005,8 +3011,6 @@ Subset.ND.plot <- Subset.ND.plot + geom_errorbarh(data = Subset.MCC.ND.summary %
         axis.text.x = element_text(size = 7),
         plot.margin=unit(c(.5,.5,.5,.5),"cm"))+
   ggtitle("Male-Bias SS ND")
-
-######################
 
 #For Lambda
 Subset.BAMM.lambda.pgls.models <- readRDS("data/Subset.BAMM.lambda.pgls.models.rds")
@@ -3076,8 +3080,6 @@ Subset.Lambda.plot <- Subset.Lambda.plot + geom_errorbarh(data = Subset.MCC.Lamb
         plot.margin=unit(c(.5,.5,.5,.5),"cm"))+
   ggtitle("Male-Bias SS Speciaton")
 
-######################
-
 #For Mu
 
 Subset.BAMM.Mu.pgls.models <- readRDS("data/Subset.BAMM.mu.pgls.models.rds")
@@ -3145,10 +3147,9 @@ Subset.Mu.plot <- Subset.Mu.plot + geom_errorbarh(data = Subset.MCC.Mu.summary %
         plot.margin=unit(c(.5,.5,.5,.5),"cm"))+
   ggtitle("Male-Bias SS Extinction")
 
-#########################################
 ```
 
-```{r, fig.width=12, fig.height=9}
+```{r SS plot combined, fig.width=12, fig.height=9}
 grid.arrange(symmetrise_scale(Subset.DR.plot, "x"),
              symmetrise_scale(Subset.ND.plot, "x"),
              symmetrise_scale(Subset.Lambda.plot, "x"), 
@@ -3158,7 +3159,7 @@ grid.arrange(symmetrise_scale(Subset.DR.plot, "x"),
 **Figure S13:** PGLS analyses using measures of male-biased sexual selection (*n* = 2,465) using three measures of speciation ($\lambda_{DR}$, $\lambda_{ND}$, $\lambda_{BAMM}$) and one measure of extinction ($\mu_{BAMM}$) as response variables. The numerical values for the model estimates using the MCC tree and HPD intervals of estimates from 100 random trees can be found in the ESM. Density curves are based on estimates from 100 trees and the circle below with error bars is the estimate and 95 % CIs from the MCC tree. For this figure we removed outliers from estimates coming from the 100 random trees for BAMM models in order to interpret the MCC 95 % CIs. This figure is part **b** of Figure 1 within the manuscript.
 
 **Table S14:** MCC model estimates from the above model are presented here as numberical values with 95 % CIs.
-```{r}
+```{r Table for SS plots}
 Subset.MCC.DR.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates from Male-bias SS", split.table = Inf)
 Subset.MCC.ND.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates from Male-bias SS", split.table = Inf)
 Subset.MCC.Lambda.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Speciation Estimates from Male-bias SS", split.table = Inf)
@@ -3167,7 +3168,7 @@ Subset.MCC.Mu.summary %>% select(-model_name) %>% filter(Parameter != "(Intercep
 
 
 **Table S15:** HPD intervals are calculated for the above figure (i.e. models using Male-bias sexual selection measures). using this measure the models using $\lambda_{DR}$ have model estimates that fall on the positive side 95 % of the time in 100 trees. For $\lambda_{ND}$, there is a positive skew, however the 95 % HPD interval overlaps zero. $\lambda_{BAMM}$ also shows a lesser positive skew. These intervals do not take into account the variance associated with each estimate and thus are not an estimate of model precision. Intervals not overlapping zero suggest that 95 % of trees from the posterior generate a model estimate for the given parameter are in the same direction (+ or -). These intervals are calculated in the same way as in Table S7 and Table S9.  
-```{r, warning = FALSE}
+```{r SS HPD, warning = FALSE}
 Subset.hpd.DR.top <- list()
 Subset.DR.pgls.summary <- na.omit(Subset.DR.pgls.summary)
 for(x in unique(Subset.DR.pgls.summary$Parameter)) {
@@ -3188,7 +3189,6 @@ Subset.hpd.ND.top <- bind_rows(Subset.hpd.ND.top) %>% `rownames<-`(c("Lower", "U
 
 saveRDS(Subset.hpd.ND.top, 'data/Subset.hpd.ND.top.rds')
 
-###############
 Subset.hpd.Lambda.top <- list()
 Subset.Lambda.pgls.summary <- na.omit(Subset.Lambda.pgls.summary)
 for(x in unique(Subset.Lambda.pgls.summary$Parameter)) {
@@ -3197,7 +3197,6 @@ Subset.hpd.Lambda.top[[x]] = hdi(Subset.Lambda.pgls.summary %>% filter(Parameter
 Subset.hpd.Lambda.top <- bind_rows(Subset.hpd.Lambda.top) %>% `rownames<-`(c("Lower", "Upper")) 
 saveRDS(Subset.hpd.Lambda.top, 'data/Subset.hpd.Lambda.top.rds')
 
-################
 Subset.hpd.Mu.top <- list()
 Subset.Mu.pgls.summary <- na.omit(Subset.Mu.pgls.summary)
 for(x in unique(Subset.Mu.pgls.summary$Parameter)) {
@@ -3214,7 +3213,7 @@ Subset.hpd.Mu.top %>% pander(split.table = Inf, digits = 3, caption = "Subset BA
 ```
   
   
-##Phylogenetic Path Analysis
+## Phylogenetic Path Analysis
 
 We undertook a phylogenetic path analysis using a model of causal pathways *a priori*. To do this we used the ``phylopath`` function. Our path analysis was undertaken on the dataset subset to species with measures of male-biased sexual selection. Additionally, the path analysis was restricted to using one measure of speciation ($\lambda_{DR}$) and the MCC tree. Our reasoning for the causal links are described briefly below:
 
@@ -3228,7 +3227,7 @@ We undertook a phylogenetic path analysis using a model of causal pathways *a pr
 8) **Range Size** dependent upon **Sexual Selection**: Sexual selection may often depend on local adaptations and the alignment of sexually selected traits with traits increase local fitness. Thus, species with smaller ranges may have higher rates of local adaptation, with sexual selection further promoting the maintenance of local adaptations, restricted migration and thus smaller range sizes. Alternatively, if sexual selection has added fitness and evolvability benefits, it may enable species to colonise a greater range of environments leading to larger range size.
 9) **Range Size** dependent upon **Temperature Seasonality**: Anticipated to be more of a correlation than causal link; however a species range size may depend on the extent of environmental variation and availability of local resources.    
 
-```{r, eval = F}
+```{r Phylopath, eval = F}
 #Set rownames to match tree
 rownames(SS.subset) <- SS.subset$TipLabel
 pruned.MCC.Subset.tree <- readRDS('data/pruned.MCC.Subset.tree.rds')
@@ -3280,7 +3279,7 @@ saveRDS(best_model, 'data/path_model.rds')
 # path.plot
 ```
 
-```{r, fig.width = 6, fig.height = 4, }
+```{r phylopath model, fig.width = 6, fig.height = 4, }
 best_model <- readRDS('data/path_model.rds')
 coef_plot(best_model, error_bar = "ci", reverse_order = TRUE) + 
   ggplot2::coord_flip()+
@@ -3291,9 +3290,9 @@ coef_plot(best_model, error_bar = "ci", reverse_order = TRUE) +
 
 _______________
 
-#Additional Figures and Tables
+# Additional Figures and Tables
 
-```{r, fig.width = 8, fig.height = 6}
+```{r hundy trees, fig.width = 8, fig.height = 6}
 BAMM.df <- readRDS('data/BAMM.df.rds')
 BAMM.Rates.100Trees <- do.call(rbind, BAMM.df)
 BAMM.Rates.100Trees$mean.lambda <- BAMM.Rates.100Trees$mean.lambda
@@ -3306,7 +3305,16 @@ DR.list <- do.call(rbind, DR.list)
 DR.Lambda.100Trees <- ggiraphExtra::summarySE(DR.list, measurevar = ".", groupvars = "rowname")
 DR.Lambda.100Trees <- DR.Lambda.100Trees %>% rename(DR.Lambda.100Trees, DR = ., TipLabel = rowname)
 
-all.trees.join <- left_join(DR.Lambda.100Trees %>% select(TipLabel, DR), BAMM.Lambda.100Trees %>% select(mean.lambda, TipLabel), by = "TipLabel")
+ND.list <- plyr::llply(nd.list, function(x) {
+  x %>% as.data.frame %>% rownames_to_column()
+  })
+ND.list <- do.call(rbind, ND.list)
+ND.Lambda.100Trees <- ggiraphExtra::summarySE(ND.list, measurevar = ".", groupvars = "rowname")
+ND.Lambda.100Trees <- ND.Lambda.100Trees %>% rename(ND.Lambda.100Trees, ND = ., TipLabel = rowname)
+
+all.trees.join <- left_join(DR.Lambda.100Trees %>% select(TipLabel, DR) %>% 
+                              left_join(ND.Lambda.100Trees %>% select(TipLabel, ND), by = "TipLabel"), 
+                            BAMM.Lambda.100Trees %>% select(mean.lambda, TipLabel), by = "TipLabel")
 
 BAMM.Lambda.100Trees %>% ggplot(aes(x = DR.Lambda.100Trees$DR, y = mean.lambda, fill = mean.lambda))+
   geom_point(shape = 21)+
@@ -3317,12 +3325,14 @@ BAMM.Lambda.100Trees %>% ggplot(aes(x = DR.Lambda.100Trees$DR, y = mean.lambda, 
   xlab("100 Trees Speciation Rate (DR)")+
   scale_fill_viridis_c()
 
+
+saveRDS(all.trees.join, "data/all.trees.correlations.rds")
 # mean(DR.Lambda.100Trees$sd)
 # mean(BAMM.Lambda.100Trees$sd)
 ```
 **Figure S15:** Speciation Rate means from 100 trees using either the DR statistic (x axis) or BAMM (y axis). While there is a clear correlation (*r* = `r round(cor(all.trees.join$DR, all.trees.join$mean.lambda), digits = 2)`) there is variability with BAMM showing less heterogeneity. 95 % CIs are plotted for both axis from the 100 trees. Each point represents a species (*n* = 5,965).
 
-```{r, echo = F}
+```{r MCC compare one, echo = F}
 MCC.BAMM.model.data <- readRDS('data/MCC.BAMM.model.data.rds')
 
 #cor(all.trees.join$DR, all.trees.join$mean.lambda)
@@ -3331,7 +3341,7 @@ MCC.tree.join <- left_join(restricted.data %>% select(MCC.DR, TipLabel), MCC.BAM
 #cor(MCC.tree.join$MCC.DR, MCC.tree.join$mean.lambda)
 ```
 
-```{r, fig.width = 8, fig.height = 6}
+```{r MCC compare two, fig.width = 8, fig.height = 6}
 restricted.data %>% ggplot(aes(x = MCC.DR, y = MCC.BAMM.model.data$mean.lambda, fill = MCC.DR))+
   geom_point(shape = 21)+
   theme_minimal()+
@@ -3344,7 +3354,7 @@ restricted.data %>% ggplot(aes(x = MCC.DR, y = MCC.BAMM.model.data$mean.lambda, 
 **Figure S16:** Similar to Figure S14, there is a correlation (*r* = `r round(cor(MCC.tree.join$MCC.DR, MCC.tree.join$mean.lambda), digits = 2)`) between $\lambda_{DR}$ and $\lambda_{BAMM}$ with BAMM results showing less heterogeneity. Each point represents a species (*n* = 5,965).
 
 
-```{r, eval = T, echo = F, results='hide', warning=F}
+```{r some random calcs, eval = T, echo = F, results='hide', warning=F}
 MCC.BAMM.df$CV.lambda <- sqrt(exp(MCC.BAMM.df$var.lambda) - 1)*100
 mean(MCC.BAMM.df$CV.lambda)
 min(MCC.BAMM.df$CV.lambda)
@@ -3358,7 +3368,7 @@ saveRDS(MCC.BAMM.df, 'data/MCC.BAMM.df.rds')
 #   scale_y_continuous(trans = "log")
 ```
 
-```{r, eval = FALSE, echo = F}
+```{r random calcs two, eval = FALSE, echo = F}
 #Run subset model with SDi
 #Run model for DR
 Subset.MCC.DR.SDi <- gls(MCC.DR ~ SDi
@@ -3375,10 +3385,7 @@ Subset.MCC.DR.SDi <- gls(MCC.DR ~ SDi
 ```
 
 
-
-
-
-#R Session information
+# R Session information
   
 ```{r}
 sessionInfo() %>% pander()
