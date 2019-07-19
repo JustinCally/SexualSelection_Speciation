@@ -58,55 +58,57 @@ ratesHistogram(BAMMplot.spec, plotBrks = F, xlab = 'Speciation rate', ylab = 'Fr
 
 ```{r}
 cols <- c("#543005", "#8c510a", "#bf812d", "#dfc27d", "#c0d884",
-           brewer.pal(n = 9, name = "BuGn")[4:9])
+           brewer.pal(n = 9, name = "YlGn")[4:9])
 cols <- c('#B76643','#B76643','#B76643','#B76643','#B47339','#AC8032','#A08E33','#909B3C','#7DA64D', brewer.pal(n = 9, name = "Greens")[5:9], "#00441B", "#00441B", "#00441B")
 
 cols <- c("#543005", "#8c510a", "#bf812d", "#dfc27d", "#c0d884",
            brewer.pal(n = 9, name = "YlGn")[4:9])
-
-cols <- c(
-'#543005',
-'#8c510a',
-'#fd8d3c',
-'#feb24c',
-'#fed976',
-'#ffeda0',
-#'#f7fcb9',
-'#d9f0a3',
-'#addd8e',
-'#78c679',
-'#41ab5d',
-'#238443',
-'#006837',
-'#006837',
-'#004529',
-'#004529',
-'#004529')
-
-cols <- c(
-'#211F29',
-'#262B37',
-'#2A3945',
-'#2C4751',
-'#2D565C',
-'#2F6565',
-'#34746C',
-'#3E8470',
-'#4D9371',
-'#60A171',
-'#78B06F',
-'#92BD6D',
-'#B0C96B',
-'#D0D46B'
-)
+# 
+# cols <- c(
+# '#543005',
+# '#8c510a',
+# '#fd8d3c',
+# '#feb24c',
+# '#fed976',
+# '#ffeda0',
+# #'#f7fcb9',
+# '#d9f0a3',
+# '#addd8e',
+# '#78c679',
+# '#41ab5d',
+# '#238443',
+# '#006837',
+# '#006837',
+# '#004529',
+# '#004529',
+# '#004529')
+# 
+# cols <- c(
+# '#211F29',
+# '#262B37',
+# '#2A3945',
+# '#2C4751',
+# '#2D565C',
+# '#2F6565',
+# '#34746C',
+# '#3E8470',
+# '#4D9371',
+# '#60A171',
+# '#78B06F',
+# '#92BD6D',
+# '#B0C96B',
+# '#D0D46B'
+# )
 
 restricted.data %>% ggplot(aes(x = exp(MCC.DR), y = 0, fill = ..x..))+
   geom_density_ridges_gradient(scale = 3, size = 0.05, gradient_lwd = 0.75)+
-  scale_fill_gradientn(colours = cols, guide = F, breaks = c(0.02, 0.1, 0.5, 2.5))+
+  scale_fill_distiller(palette = "YlGn", direction = 1, labels = )+
   theme_minimal()+
-  scale_x_continuous(trans = "log", breaks = c(0.02, 0.1, 0.5, 2.5))+
+  scale_x_continuous(breaks = c(0.02, 0.1, 0.5, 2.5), trans = "log")+
   scale_y_discrete(expand = c(0,0))+
   theme(axis.text.y = element_blank(),
+        legend.direction = "horizontal",
+        legend.position = "bottom",
         axis.title.y = element_blank(),
         axis.text.x = element_text(size = 14),
         axis.line.y = element_blank(), 
@@ -114,7 +116,7 @@ restricted.data %>% ggplot(aes(x = exp(MCC.DR), y = 0, fill = ..x..))+
         axis.title.x = element_blank(),
         axis.ticks.x.bottom = element_line())
 
-MCC.BAMM.model.data %>% ggplot(aes(x = SDi, y = 0, fill = ..x..))+
+ MCC.BAMM.model.data %>% ggplot(aes(x = SDi, y = 0, fill = ..x..))+
   geom_density_ridges_gradient(scale = 3, size = 0.05, gradient_lwd = 0.75)+
   scale_fill_distiller(palette = "OrRd", direction = 1, guide = F)+
   theme_minimal()+
@@ -246,7 +248,7 @@ Plot the SDi val
 ```{r}
 # library(RColorBrewer)
 # col <- c(scale_color_distiller(palette = "OrRd", direction = 1), scale_color_distiller(palette = "BuPu", direction = 1))
-ggtree.plot <- ggtree(fortified.MCC.tree, aes(color =  rate),
+ggtree.plot <- ggtree(fortified.MCC.tree, aes(color = rate),
                       layout="fan", open.angle = 90, size = 0.175) + 
   xlim(-75, NA)+
   scale_color_distiller(palette = "YlGn", direction = 1, guide = F, trans = "log", breaks=c(0.05, 0.15, 0.5, 1.5))+
@@ -294,7 +296,7 @@ display.brewer.pal(n = 11, name = "RdYlGn")[4:11]
 ggtree.plot.dr <- ggtree(fortified.DR.tree, aes(color =  rate),
                       layout="fan", open.angle = 90, size = 0.175) + 
   xlim(-75, NA)+
-  scale_color_distiller(palette = "YlGn", direction = 1, guide = F, trans = "log", breaks=c(0.05, 0.15, 0.5, 1.5))+
+  scale_color_distiller(palette = "YlGn", direction = 1, trans = "log", breaks=c(0.05, 0.15, 0.5, 1.5))+
   theme(legend.position = "bottom",
         legend.text = element_text(size = 18))
 
