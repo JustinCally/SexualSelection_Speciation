@@ -1,7 +1,7 @@
 ---
-title: Male-biased sexual selection, but not sexual dichromatism, predicts speciation
-  in birds
-author: "Justin G. Cally, Devi Stuart-Fox, Luke Holman, Iliana Medina Guzmán"
+title: Male-biased sexual selection, but not sexual dichromatism, predicts speciation in birds
+author: 
+# "Justin G. Cally, Devi Stuart-Fox, Luke Holman, Iliana Medina Guzmán"
 csl: References/evolution.csl
 output:
   html_document:
@@ -11,7 +11,7 @@ output:
     number_sections: false  ## if you want number sections at each table header
     theme: yeti # lovely fonts and colours
     code_folding: hide # awesome buttons to show/hide the code
-subtitle: Supplementary Material
+subtitle: Electronic Supplementary Material
 bibliography: References/SS_Extinction.bib
 ---
 

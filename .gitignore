@@ -10,7 +10,7 @@
 *.rda
 *.ai
 *.svg
-
+*.tex
 Manuscript.docx
 Manuscript.Rmd
 Manuscript.pdf
@@ -22,7 +22,6 @@ Figures_old/
 bamm_extinction/data/bamm_files/
 bamm_extinction/data/full_passerines/
 data/trees/
-
 #Except this data needed in Rmarkdown regeneration
 !data/MCC.DR.top.rds
 !data/MCC.ND.top.rds
@@ -39,24 +38,18 @@ data/trees/
 !data/Subset.hpd.Lambda.top.rds
 !data/MCC.BAMM.df.rds
 !data/path_model.rds
-
-#Correlations 
+#Correlations
 !data/all.trees.correlations.rds
 !data/Harvey.vs.us.rds
-
 #Big model summaries
 !DR.pgls.summary.rds
 !ND.pgls.summary.rds
 !Subset.DR.pgls.summary.rds
 !Subset.ND.pgls.summary.rds
-
 #And these 4 figures
 !Figures/Estimates_and_scatter_edit.pdf
 !Figures/DRSpeciationFigure.pdf
 !Figures/Path_Analysis.pdf
-
-
-
 #Big files (just in case): Use: find ./* -size +100M | cat >> .gitignore
 ./Figures_old/BigSpeciationPlot.psd
 ./Figures_old/DRSpeciationFigure.ai
@@ -86,3 +79,5 @@ data/trees/
 ./data/MCC.ND.corPagel.rds
 ./data/BAMM_MCC/tree_MCC_event_data.txt
 ./data/BAMM_MCC/TimeConstant/tree_MCC_Constant_event_data.txt
+title_page.Rmd
+title_page.pdf
