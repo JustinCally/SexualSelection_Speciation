@@ -64,6 +64,8 @@ library(bindrcpp)
 library(ggrastr)
 library(patchwork)
 library(phylopath)
+library(sjPlot)
+library(sjmisc)
 if(!requireNamespace("BiocManager", quietly = TRUE)){
     install.packages("BiocManager")
   }
@@ -1208,7 +1210,6 @@ saveRDS(MCC.ND.top, 'data/MCC.ND.top.rds')
 From these models we obtained a distribution of the estimates for the models alongside the 95 % CIs of the MCC model. This enabled us to show the variation between trees, and the variation associated with the top MCC model. Given the variability across trees we ran 1000 ND and DR models, each allowed to estimate a phylogenetic signal ($\lambda$). The models were saved as an `.rds` object and read back into R with key coefficients extracted. Below we provide the code for this: 
 
 ```{r trycatch all models, eval = F}
-
 #Read in DR models and extract estimates:
 
 #We ran DR and ND models on 1000 trees
@@ -2494,6 +2495,9 @@ SS.subset %>% ggplot(aes(x = SDi, y = Sexual_selection_ppca))+
   geom_point()+
   geom_smooth(method = "lm")+
   theme_minimal()
+
+#Set rownames to match tree
+rownames(SS.subset) <- SS.subset$TipLabel
 ```
 **Figure S12:** The relationship between absolute sexual dichromatism and male-baised sexual selection. Although positively correlated, the distribution is very noisy with some species having high sexual dichromatism and low male-biased sexual selection and vice versa. 
 
@@ -2510,9 +2514,6 @@ r = cor(SS.subset$SDi, SS.subset$Sexual_selection_ppca)) %>% pander(digits = 2)
 pruned.MCC.Subset.tree <- drop.tip(MCC.passerine,MCC.passerine$tip.label[-match(SS.subset$TipLabel, MCC.passerine$tip.label)])
 
 saveRDS(pruned.MCC.Subset.tree, 'data/pruned.MCC.Subset.tree.rds')
-
-#Set rownames to match tree
-rownames(SS.subset) <- SS.subset$TipLabel
 
 #Run a corPagel model to estimate lambda for DR
 MCC.DR.Subset.global <- gls(MCC.DR ~ Sexual_selection_ppca
@@ -3368,22 +3369,99 @@ saveRDS(MCC.BAMM.df, 'data/MCC.BAMM.df.rds')
 #   scale_y_continuous(trans = "log")
 ```
 
-```{r random calcs two, eval = FALSE, echo = F}
+## Testing the sexual dichromatism dataset using the same data points as the sexual selection dataset  
+
+In our analysis we conducted tested for the effect of sexual dichromatism on speciation using a dataset with a sample size of 5,812 passerine bird species. However, when testing for the effects of sexual selection (using a principal component score) we only utilised 2,465 species. This discrepancy is because data for the principal components analysis is incomplete for many species. Here we conduct an analysis on the effects of sexual dichromatism on speciation using the same model structure as in our primary analysis, however using the same data/species as we used in the analysis of the effect of sexual selection (*n = 2,465*). We conduct the analyses on MCC trees for $\lambda_{DR}$, $\lambda_{ND}$ and $\lambda_{BAMM}$ and compare the results to the analyses conducted on 5,812 passerine bird species.
+
+```{r subset SDi, eval = TRUE, warning=FALSE, message=FALSE, fig.height=12, fig.width=8}
+if(!file.exists("data/sample_size_comparison.rds")){
+# Read in tree 
+pruned.MCC.Subset.tree <- readRDS('data/pruned.MCC.Subset.tree.rds')
+
 #Run subset model with SDi
 #Run model for DR
-Subset.MCC.DR.SDi <- gls(MCC.DR ~ SDi
-                         + log(range.size.m2)
-                         + bioclim4 #Seasonal variation
-                         + residuals.PC1 #Spatial variation
-                         + PC1.LIG #Long-term climate variation
-                         + NPP,
-                correlation = corPagel(1, phy = pruned.MCC.Subset.tree, fixed = FALSE), 
-                data = SS.subset, 
-                method = "REML")
+Subset_SDi_Models <- list()
+
+Subset_SDi_Models[["DR"]] <- gls(MCC.DR ~ SDi
+                               + log(range.size.m2)
+                               + bioclim4 #Seasonal variation
+                               + residuals.PC1 #Spatial variation
+                               + PC1.LIG #Long-term climate variation
+                               + NPP,
+                      correlation = corPagel(1, phy = pruned.MCC.Subset.tree, fixed = F), #Subset Tree 
+                      data = SS.subset, 
+                      method = "REML")
+
+#Run model for ND
+Subset_SDi_Models[["ND"]] <- gls(MCC.ND ~ SDi
+                               + log(range.size.m2)
+                               + bioclim4 #Seasonal variation
+                               + residuals.PC1 #Spatial variation
+                               + PC1.LIG #Long-term climate variation
+                               + NPP,
+                         correlation = corPagel(1, phy = pruned.MCC.Subset.tree, fixed = F), #Subset Tree 
+                         data = SS.subset, 
+                         method = "REML")
+
+#Run model for ND
+Subset_SDi_Models[["BAMM"]] <- gls(mean.lambda ~ SDi
+                                 + log(range.size.m2)
+                                 + bioclim4 #Seasonal variation
+                                 + residuals.PC1 #Spatial variation
+                                 + PC1.LIG #Long-term climate variation
+                                 + NPP,
+                           weights = ~ sqrt(var.lambda),
+                           correlation = corBrownian(phy = pruned.MCC.Subset.tree), #Subset Tree
+                           data = SS.subset, 
+                           method = "REML")
+
+# Main analysis models 
+Main_SDi_Models <- list()
+
+Main_SDi_Models[["DR"]] <- readRDS('data/MCC.DR.top.rds')
+Main_SDi_Models[["ND"]] <- readRDS('data/MCC.ND.top.rds')
+Main_SDi_Models[["BAMM"]] <- readRDS('data/MCC.Lambda.top.rds')
+
+sample_size_comparison <- list(Subset_SDi_Models = Subset_SDi_Models, Main_SDi_Models = Main_SDi_Models)
+saveRDS(sample_size_comparison, "data/sample_size_comparison.rds")
+} else {
+  sample_size_comparison  <- readRDS("data/sample_size_comparison.rds")
+}
+
+plot_mods <- function(model1, model2) {
+  
+}
+sjplot_custom <- function(sub, full, type, min, max) {
+  theme_set(theme_sjplot())
+plot <-  sjPlot::plot_models(sub, 
+                      full, 
+                      show.p = FALSE, 
+                      transform = NULL, 
+                      std.est = "std2", 
+                      m.labels = c("Subset data (n = 2,465)", "Full data (n = 5,812)"), 
+                      legend.title = "Data Points Used",
+                      title = paste("Comparing", type, "models with subset data")) + 
+    ylim(min, max) +
+    theme_sjplot2() + 
+  scale_color_sjplot("simply")
+  return(plot)
+}
+
+grid.arrange(
+sjplot_custom(sample_size_comparison[["Subset_SDi_Models"]][["DR"]], 
+              sample_size_comparison[["Main_SDi_Models"]][["DR"]], 
+              type = "DR", min = -0.025, max = 0.025),
+sjplot_custom(sample_size_comparison[["Subset_SDi_Models"]][["ND"]], 
+              sample_size_comparison[["Main_SDi_Models"]][["ND"]], 
+              type = "ND", min = -0.00075, max = 0.00075),
+sjplot_custom(sample_size_comparison[["Subset_SDi_Models"]][["BAMM"]], 
+              sample_size_comparison[["Main_SDi_Models"]][["BAMM"]], 
+              type = "Lambda-BAMM", min = -0.002, max = 0.002))
 
 #stargazer(Subset.MCC.DR.SDi, type = "html")
 ```
 
+**Figure S17:** A comparison of full and subset data was used in models testing for the effect of sexual dichromatism on speciation rate ($\lambda_{DR}$, $\lambda_{ND}$ and $\lambda_{BAMM}$). While there is variation between model estimates due to the different data points used, these differences do not lead us to make alternive conclusions. In all three cases the partial regression coefficient for sexual dichromatism (SDi) has 95 % confidence intervals that overlap zero, thus we have no reason to suspect that the effect that this study found of sexual selection on speciation is due to sampling bias.  
 
 # R Session information
   

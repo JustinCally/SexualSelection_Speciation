@@ -4,7 +4,6 @@ title: Male-biased sexual selection, but not sexual dichromatism, predicts speci
 author:
 bibliography: References/SS_Extinction.bib
 output:
-  word_document: default
   pdf_document:
     keep_tex: yes
 header-includes: \usepackage{microtype} \usepackage[all]{hypcap} \usepackage{amsmath}
