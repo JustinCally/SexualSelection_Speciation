@@ -37,6 +37,17 @@ data/trees/
 !data/Subset.hpd.ND.top.rds
 !data/Subset.hpd.Lambda.top.rds
 !data/MCC.BAMM.df.rds
+
+!data/Subset.ND.pgls.summaryA.rds
+!data/Subset.ND.pgls.summary_mating.rds
+!data/Subset.ND.pgls.summary_paternal.rds
+!data/Subset.DR.pgls.summary_sswing.rds
+!data/Subset.DR.pgls.summary_mating.rds
+!data/Subset.DR.pgls.summary_paternal.rds
+!data/Subset.Lambda.pgls.summaryB.rds
+!data/Subset.Lambda.pgls.summary_mating.rds
+!data/Subset.Lambda.pgls.summary_paternal.rds
+
 !data/path_model.rds
 #Correlations
 !data/all.trees.correlations.rds
