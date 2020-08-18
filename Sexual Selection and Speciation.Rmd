@@ -66,6 +66,7 @@ library(patchwork)
 library(phylopath)
 library(sjPlot)
 library(sjmisc)
+library(egg)
 if(!requireNamespace("BiocManager", quietly = TRUE)){
     install.packages("BiocManager")
   }
@@ -1522,7 +1523,7 @@ MCC.Mu.top.unweighted <- gls(mean.mu ~ SDi
 saveRDS(MCC.Mu.top.unweighted, 'data/MCC.Mu.top.unweighted.rds')
 ```
 
-**Table S6:** Models with a set of weights for the response based on the inverse of the variance of the posterior distribution in $\lambda_{BAMM}$ and $\mu_{BAMM}$ have much lower AIC values, indicating that the weighting scheme improves the fit of the model. In any case, we found that an unweighted model did not change qualitative results. 
+**Table S7:** Models with a set of weights for the response based on the inverse of the variance of the posterior distribution in $\lambda_{BAMM}$ and $\mu_{BAMM}$ have much lower AIC values, indicating that the weighting scheme improves the fit of the model. In any case, we found that an unweighted model did not change qualitative results. 
 ```{r MCC BAMM AICs}
 MCC.Lambda.top <- readRDS('data/MCC.Lambda.top.rds')
 MCC.Lambda.top.unweighted <- readRDS('data/MCC.Lambda.top.unweighted.rds')
@@ -3462,6 +3463,157 @@ sjplot_custom(sample_size_comparison[["Subset_SDi_Models"]][["BAMM"]],
 ```
 
 **Figure S17:** A comparison of full and subset data was used in models testing for the effect of sexual dichromatism on speciation rate ($\lambda_{DR}$, $\lambda_{ND}$ and $\lambda_{BAMM}$). While there is variation between model estimates due to the different data points used, these differences do not lead us to make alternive conclusions. In all three cases the partial regression coefficient for sexual dichromatism (SDi) has 95 % confidence intervals that overlap zero, thus we have no reason to suspect that the effect that this study found of sexual selection on speciation is due to sampling bias.  
+
+<!-- ## Sexual selection components effects on speciation   -->
+
+```{r individual_components, fig.height = 8, fig.width = 7, warning = F, message = F, include=FALSE, echo = FALSE, eval = FALSE}
+#### Read files with summary results: Additional analyses were conducted seperate from this RMarkdown; Contact authors for information ----
+
+nd.wing <- readRDS('data/Subset.ND.pgls.summaryA.rds')[1:300]
+nd.mating <- readRDS('data/Subset.ND.pgls.summary_mating.rds')[1:300]
+nd.paternal <- readRDS('data/Subset.ND.pgls.summary_paternal.rds')
+dr.wing <- readRDS('data/Subset.DR.pgls.summary_sswing.rds')
+dr.mating <- readRDS('data/Subset.DR.pgls.summary_mating.rds')
+dr.paternal <- readRDS('data/Subset.DR.pgls.summary_paternal.rds')
+b.wing <- readRDS('data/Subset.Lambda.pgls.summaryB.rds')
+b.mating <- readRDS('data/Subset.Lambda.pgls.summary_mating.rds')
+b.paternal <- readRDS('data/Subset.Lambda.pgls.summary_paternal.rds')
+
+
+# Subset.ND.pgls.summary <- dplyr::bind_rows(b.wing, b.paternal) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
+# 
+# Subset.ND.pgls.summary <- dplyr::filter(Subset.ND.pgls.summary, Parameter %in% c('abs(SSD_wing)', 'as.factor(paternal_care)1'))
+
+#HPDinterval(as.mcmc(Subset.ND.pgls.summary$Estimate), prob=0.95)
+
+
+#### Graph for paternal care ####
+
+Subset.ND.pgls.summary=nd.paternal
+Subset.ND.pgls.summary <- bind_rows(Subset.ND.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
+Subset.ND.pgls.summary = filter(Subset.ND.pgls.summary,Parameter == 'as.factor(paternal_care)1')
+HPD_Interval_ND_PC <- HPDinterval(as.mcmc(Subset.ND.pgls.summary$Estimate), prob=0.95) %>% as.data.frame %>% dplyr::mutate(Parameter = 'as.factor(paternal_care)1')
+
+Subset.ND.plot <-Subset.ND.pgls.summary %>% filter(Parameter != "(Intercept)") %>% 
+  ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
+  geom_density(aes(y = ..scaled..),
+               position = position_nudge(y= 0.6), fill="orange", colour="black")+
+  geom_jitter(shape = 21, alpha = 0.5, size = 1, colour="black", fill="orange")+
+  geom_vline(xintercept = 0)+
+  theme_minimal()+
+  theme(axis.text.y = element_blank(),
+        legend.position = "none")+ scale_x_continuous(limits = c(-0.25, 0.25)) +
+  annotate("text", x=-0.22, y=1.5, label= expression(lambda[ND])) + xlab(" ") + ylab(" ") +
+  geom_errorbarh(data = HPD_Interval_ND_PC, aes(y = Parameter, xmin = lower, xmax = upper), 
+                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "orange", size = 1)
+
+Subset.DR.pgls.summary=dr.paternal
+Subset.DR.pgls.summary <- bind_rows(Subset.DR.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
+Subset.DR.pgls.summary = filter(Subset.DR.pgls.summary,Parameter == 'as.factor(paternal_care)1')
+HPD_Interval_DR_PC <- HPDinterval(as.mcmc(Subset.DR.pgls.summary$Estimate), prob=0.95) %>% 
+  as.data.frame %>% 
+  dplyr::mutate(Parameter = 'as.factor(paternal_care)1')
+
+
+Subset.DR.plot <-Subset.DR.pgls.summary %>% filter(Parameter != "(Intercept)") %>% 
+  ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
+  geom_density(aes(y = ..scaled..),
+               position = position_nudge(y= 0.6),fill="orange", colour="black")+
+  geom_jitter(shape = 21, alpha = 0.5, size = 1,fill="black", colour="orange")+
+  geom_vline(xintercept = 0)+
+  theme_minimal()+
+  theme(axis.text.y = element_blank(),
+        legend.position = "none")+ scale_x_continuous(limits = c(-0.25, 0.25))+
+  annotate("text", x=-0.22, y=1.5, label= expression(lambda[DR])) + xlab(" ") + ylab(" ") + 
+    geom_errorbarh(data = HPD_Interval_DR_PC, aes(y = Parameter, xmin = lower, xmax = upper), 
+                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "orange", size = 1)
+
+Subset.B.pgls.summary=b.paternal
+Subset.B.pgls.summary <- bind_rows(Subset.B.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
+Subset.B.pgls.summary = filter(Subset.B.pgls.summary,Parameter == 'as.factor(paternal_care)1')
+HPD_Interval_B_PC <- HPDinterval(as.mcmc(Subset.B.pgls.summary$Estimate), prob=0.95) %>% 
+  as.data.frame %>% 
+  dplyr::mutate(Parameter = 'as.factor(paternal_care)1')
+
+Subset.B.plot <-Subset.B.pgls.summary %>% filter(Parameter != "(Intercept)") %>% 
+  ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
+  geom_density(aes(y = ..scaled..),
+               position = position_nudge(y= 0.6),fill="orange", colour="black")+
+  geom_jitter(shape = 21, alpha = 0.5, size = 1,fill="black", colour="orange")+
+  geom_vline(xintercept = 0)+
+  theme_minimal()+
+  theme(axis.text.y = element_blank(),
+        legend.position = "none") + scale_x_continuous(limits = c(-0.25, 0.25)) +
+  annotate("text", x=-0.20, y=1.5, label= expression(lambda[BAMM])) +
+  geom_errorbarh(data = HPD_Interval_B_PC, aes(y = Parameter, xmin = lower, xmax = upper), 
+                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "orange", size = 1) +
+  xlab("Estimate (paternal care)") + ylab("")
+
+#Paternal_graph=ggarrange(Subset.ND.plot,Subset.DR.plot,Subset.B.plot, ncol=1)
+
+#### Graph for sexual dimorphism ####
+
+Subset.ND.pgls.summary=nd.wing
+Subset.ND.pgls.summary <- bind_rows(Subset.ND.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
+Subset.ND.pgls.summary = filter(Subset.ND.pgls.summary,Parameter == 'abs(SSD_wing)')
+HPD_Interval_ND_W <- HPDinterval(as.mcmc(Subset.ND.pgls.summary$Estimate), prob=0.95) %>% as.data.frame %>% dplyr::mutate(Parameter = 'abs(SSD_wing)')
+
+
+Subset.ND.plot2 <-Subset.ND.pgls.summary %>% filter(Parameter != "(Intercept)") %>% 
+  ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
+  geom_density(aes(y = ..scaled..),
+               position = position_nudge(y= 0.6), fill="darkturquoise", colour="black")+
+  geom_jitter(shape = 21, alpha = 0.5, size = 1, colour="black", fill="darkturquoise")+
+  geom_vline(xintercept = 0)+
+  theme_minimal()+
+  theme(axis.text.y = element_blank(),
+        legend.position = "none")+ scale_x_continuous(limits = c(-2.5, 4)) +
+  xlab(" ") + ylab(" ") +
+    geom_errorbarh(data = HPD_Interval_ND_W, aes(y = Parameter, xmin = lower, xmax = upper), 
+                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "darkturquoise", size = 1)
+
+Subset.DR.pgls.summary=dr.wing
+Subset.DR.pgls.summary <- bind_rows(Subset.DR.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
+Subset.DR.pgls.summary = filter(Subset.DR.pgls.summary,Parameter == 'abs(SSD_wing)')
+HPD_Interval_DR_W <- HPDinterval(as.mcmc(Subset.DR.pgls.summary$Estimate), prob=0.95) %>% as.data.frame %>% dplyr::mutate(Parameter = 'abs(SSD_wing)')
+
+Subset.DR.plot2 <-Subset.DR.pgls.summary %>% filter(Parameter != "(Intercept)") %>% 
+  ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
+  geom_density(aes(y = ..scaled..),
+               position = position_nudge(y= 0.6),fill="darkturquoise", colour="black")+
+  geom_jitter(shape = 21, alpha = 0.5, size = 1,fill="black", colour="darkturquoise")+
+  geom_vline(xintercept = 0)+
+  theme_minimal()+
+  theme(axis.text.y = element_blank(),
+        legend.position = "none")+ scale_x_continuous(limits = c(-2.5, 4)) +
+  xlab(" ") + ylab(" ") +
+  geom_errorbarh(data = HPD_Interval_DR_W, aes(y = Parameter, xmin = lower, xmax = upper), 
+                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "darkturquoise", size = 1)
+
+Subset.B.pgls.summary=b.wing
+Subset.B.pgls.summary <- bind_rows(Subset.B.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
+Subset.B.pgls.summary = filter(Subset.B.pgls.summary,Parameter == 'abs(SSD_wing)')
+HPD_Interval_B_W <- HPDinterval(as.mcmc(Subset.B.pgls.summary$Estimate), prob=0.95) %>% as.data.frame %>% dplyr::mutate(Parameter = 'abs(SSD_wing)')
+
+Subset.B.plot2 <-Subset.B.pgls.summary %>% filter(Parameter != "(Intercept)") %>% 
+  ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
+  geom_density(aes(y = ..scaled..),
+               position = position_nudge(y= 0.6),fill="darkturquoise", colour="black")+
+  geom_jitter(shape = 21, alpha = 0.5, size = 1,fill="black", colour="darkturquoise")+
+  geom_vline(xintercept = 0)+
+  theme_minimal()+
+  theme(axis.text.y = element_blank(),
+        legend.position = "none") + scale_x_continuous(limits = c(-2.5, 4)) +
+  xlab("Estimate (sexual size dimorphism)") + ylab("") +
+  geom_errorbarh(data = HPD_Interval_B_W, aes(y = Parameter, xmin = lower, xmax = upper), 
+                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "darkturquoise", size = 1)
+
+ggarrange(Subset.ND.plot,Subset.ND.plot2,Subset.DR.plot,Subset.DR.plot2,Subset.B.plot,Subset.B.plot2, ncol=2)
+#saved as 8x7
+
+```
+
+**Figure S18:** Estimates of the effect of individual sexual selection components included in the PPCA (paternal care and wing size dimorphism) on three measures of speciation rate ($\lambda_{DR}$, $\lambda_{ND}$ and $\lambda_{BAMM}$). Estimates are presented as density intervals from pgls models on 300 phylogentic trees.  
 
 # R Session information
   
