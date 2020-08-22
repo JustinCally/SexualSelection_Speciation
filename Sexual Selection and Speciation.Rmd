@@ -58,6 +58,7 @@ library(Cairo)
 library(gdtools)
 library(data.table)
 library(bindrcpp)
+library(captioner)
 #devtools::install_github("Ax3man/phylopath")
 #devtools::install_github("thomasp85/patchwork")
 #devtools::install_github('VPetukhov/ggrastr')
@@ -82,6 +83,18 @@ source('functions/symmetrise_scale.R')
 source('functions/Correlation_matrix.R')
 source('functions/gheatmap2.R') #Gets rid of spaces between tiles
 knitr::opts_chunk$set(cache=TRUE)
+
+supp_figs <- captioner::captioner(prefix = "Figure S", auto_space = F)
+
+
+counter_fig <- function() {
+  if(!exists('counter_iteration')) {
+    counter_iteration <<- 1L
+  } else {
+    counter_iteration <<- counter_iteration + 1L
+  }
+  print(counter_iteration)
+}
 ```
 
 # Compiling the data
@@ -3505,7 +3518,9 @@ Subset.ND.plot <-Subset.ND.pgls.summary %>% filter(Parameter != "(Intercept)") %
         legend.position = "none")+ scale_x_continuous(limits = c(-0.25, 0.25)) +
   annotate("text", x=-0.22, y=1.5, label= expression(lambda[ND])) + xlab(" ") + ylab(" ") +
   geom_errorbarh(data = HPD_Interval_ND_PC, aes(y = Parameter, xmin = lower, xmax = upper), 
-                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "orange", size = 1)
+                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "orange", size = 1) +
+  theme(panel.grid.major.y = element_blank())
+  # geom_text(aes(y=Parameter, x = Estimate, label=""), position = position_nudge(y = -0.8), inherit.aes = F)
 
 Subset.DR.pgls.summary=dr.paternal
 Subset.DR.pgls.summary <- bind_rows(Subset.DR.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
@@ -3526,7 +3541,8 @@ Subset.DR.plot <-Subset.DR.pgls.summary %>% filter(Parameter != "(Intercept)") %
         legend.position = "none")+ scale_x_continuous(limits = c(-0.25, 0.25))+
   annotate("text", x=-0.22, y=1.5, label= expression(lambda[DR])) + xlab(" ") + ylab(" ") + 
     geom_errorbarh(data = HPD_Interval_DR_PC, aes(y = Parameter, xmin = lower, xmax = upper), 
-                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "orange", size = 1)
+                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "orange", size = 1) +
+  theme(panel.grid.major.y = element_blank())
 
 Subset.B.pgls.summary=b.paternal
 Subset.B.pgls.summary <- bind_rows(Subset.B.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
@@ -3547,7 +3563,8 @@ Subset.B.plot <-Subset.B.pgls.summary %>% filter(Parameter != "(Intercept)") %>%
   annotate("text", x=-0.20, y=1.5, label= expression(lambda[BAMM])) +
   geom_errorbarh(data = HPD_Interval_B_PC, aes(y = Parameter, xmin = lower, xmax = upper), 
                  inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "orange", size = 1) +
-  xlab("Estimate (paternal care)") + ylab("")
+  xlab("Estimate (paternal care)") + ylab("") +
+  theme(panel.grid.major.y = element_blank())
 
 #Paternal_graph=ggarrange(Subset.ND.plot,Subset.DR.plot,Subset.B.plot, ncol=1)
 
@@ -3570,7 +3587,8 @@ Subset.ND.plot2 <-Subset.ND.pgls.summary %>% filter(Parameter != "(Intercept)") 
         legend.position = "none")+ scale_x_continuous(limits = c(-2.5, 4)) +
   xlab(" ") + ylab(" ") +
     geom_errorbarh(data = HPD_Interval_ND_W, aes(y = Parameter, xmin = lower, xmax = upper), 
-                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "darkturquoise", size = 1)
+                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "darkturquoise", size = 1) +
+  theme(panel.grid.major.y = element_blank())
 
 Subset.DR.pgls.summary=dr.wing
 Subset.DR.pgls.summary <- bind_rows(Subset.DR.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
@@ -3588,7 +3606,8 @@ Subset.DR.plot2 <-Subset.DR.pgls.summary %>% filter(Parameter != "(Intercept)") 
         legend.position = "none")+ scale_x_continuous(limits = c(-2.5, 4)) +
   xlab(" ") + ylab(" ") +
   geom_errorbarh(data = HPD_Interval_DR_W, aes(y = Parameter, xmin = lower, xmax = upper), 
-                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "darkturquoise", size = 1)
+                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "darkturquoise", size = 1) +
+  theme(panel.grid.major.y = element_blank())
 
 Subset.B.pgls.summary=b.wing
 Subset.B.pgls.summary <- bind_rows(Subset.B.pgls.summary) %>% `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI"))
@@ -3606,14 +3625,178 @@ Subset.B.plot2 <-Subset.B.pgls.summary %>% filter(Parameter != "(Intercept)") %>
         legend.position = "none") + scale_x_continuous(limits = c(-2.5, 4)) +
   xlab("Estimate (sexual size dimorphism)") + ylab("") +
   geom_errorbarh(data = HPD_Interval_B_W, aes(y = Parameter, xmin = lower, xmax = upper), 
-                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "darkturquoise", size = 1)
+                 inherit.aes = F, height = 0, position = position_nudge(y = -0.5), colour = "darkturquoise", size = 1) +
+  theme(panel.grid.major.y = element_blank())
 
-ggarrange(Subset.ND.plot,Subset.ND.plot2,Subset.DR.plot,Subset.DR.plot2,Subset.B.plot,Subset.B.plot2, ncol=2)
-#saved as 8x7
 
+# Subrtact the intercept (monogamy) from the partial estimates to get their estimated effect on speciation rate in comparison to the reference level (monogamy)
+Subset.DR.pgls.summary <- dr.mating %>% 
+  dplyr::bind_rows() %>% 
+  `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI")) %>% #estimate now in 5th col
+   dplyr::filter(str_detect(string = Parameter, "mating_system|Intercept")) %>% 
+  dplyr::mutate(Parameter = case_when(Parameter == "as.factor(mating_system)1" ~ "<5% Polygyny",
+                                      Parameter == "as.factor(mating_system)2" ~ "5-20% Polygny", 
+                                      Parameter == "as.factor(mating_system)3" ~ ">20% Polygny", 
+                                      TRUE ~ Parameter)) 
+
+#Factor for plot display
+Subset.DR.pgls.summary$Parameter <- factor(Subset.DR.pgls.summary$Parameter, 
+                                           levels = c("(Intercept)", "<5% Polygyny", "5-20% Polygny", ">20% Polygny")) 
+
+#Get HPD estimates
+HPD_DR_Mating <- Subset.DR.pgls.summary %>%
+  dplyr::group_by(Parameter) %>%
+  summarise(lower = HPDinterval(as.mcmc(Estimate), prob=0.95)[1],
+            upper = HPDinterval(as.mcmc(Estimate), prob=0.95)[2])
+
+Subset.DR.Mating.Plot <-Subset.DR.pgls.summary %>% 
+  filter(Parameter != "(Intercept)") %>% 
+  mutate(Test = "Mating System (vs Monogamy)") %>%
+  ggplot(aes(x = Estimate, y = Test, fill = Parameter, colour = Parameter)) +
+  geom_density(aes(y = ..scaled..),
+               alpha = 0.4,
+               position = position_nudge(y= 1), colour="black")+
+  #geom_jitter(shape = 21, alpha = 0.5, size = 1, fill="black", position = position_nudge(y= 0.4))+
+  geom_vline(xintercept = 0)+
+  theme_minimal()+
+  theme(axis.text.y = element_blank(),
+        legend.position = "none") + scale_x_continuous(limits = c(-0.3, 0.3)) +
+  xlab("") + ylab("") +
+  geom_errorbarh(data = HPD_DR_Mating %>% 
+  filter(Parameter != "(Intercept)") %>% 
+  mutate(Test = "Mating System (vs Monogamy)"), 
+  aes(y = Test, 
+      xmin = lower, 
+      xmax = upper, 
+      colour = Parameter), 
+  inherit.aes = F, height = 0, position = position_nudge(y = c(-0.1,-0.25, -0.4)), size = 1) +
+  geom_text(data = HPD_DR_Mating %>% 
+  filter(Parameter != "(Intercept)") %>% 
+  mutate(Test = "Mating System (vs Monogamy)"), 
+  aes(y = Test, 
+      x = lower, 
+      colour = Parameter, 
+      label = Parameter), 
+  inherit.aes = F, height = 0,
+  position = position_nudge(y = c(-0.1,-0.25, -0.4), x = -0.095), size = 3.25) +
+  scale_fill_manual(values = brewer.pal(8, "Greens")[6:8]) +
+  scale_color_manual(values = brewer.pal(8, "Greens")[6:8])
+
+#### ND ####
+
+# Subrtact the intercept (monogamy) from the partial estimates to get their estimated effect on speciation rate in comparison to the reference level (monogamy)
+Subset.ND.pgls.summary <- nd.mating %>% 
+  dplyr::bind_rows() %>% 
+  `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI")) %>% #estimate now in 5th col
+   dplyr::filter(str_detect(string = Parameter, "mating_system|Intercept")) %>% 
+  dplyr::mutate(Parameter = case_when(Parameter == "as.factor(mating_system)1" ~ "<5% Polygyny",
+                                      Parameter == "as.factor(mating_system)2" ~ "5-20% Polygny", 
+                                      Parameter == "as.factor(mating_system)3" ~ ">20% Polygny",
+                                      TRUE ~ Parameter)) 
+
+#Factor for plot display
+Subset.ND.pgls.summary$Parameter <- factor(Subset.ND.pgls.summary$Parameter, 
+                                           levels = c("(Intercept)", "<5% Polygyny", "5-20% Polygny", ">20% Polygny")) 
+
+#Get HPD estimates
+HPD_ND_Mating <- Subset.ND.pgls.summary %>%
+  dplyr::group_by(Parameter) %>%
+  summarise(lower = HPDinterval(as.mcmc(Estimate), prob=0.95)[1],
+            upper = HPDinterval(as.mcmc(Estimate), prob=0.95)[2])
+
+Subset.ND.Mating.Plot <-Subset.ND.pgls.summary %>% 
+  filter(Parameter != "(Intercept)") %>% 
+  mutate(Test = "Mating System (vs Monogamy)") %>%
+  ggplot(aes(x = Estimate, y = Test, fill = Parameter, colour = Parameter)) +
+  geom_density(aes(y = ..scaled..),
+               alpha = 0.4,
+               position = position_nudge(y= 1), colour="black")+
+  #geom_jitter(shape = 21, alpha = 0.5, size = 1, fill="black", position = position_nudge(y= 0.4))+
+  geom_vline(xintercept = 0)+
+  theme_minimal()+
+  theme(axis.text.y = element_blank(),
+        legend.position = "none") + scale_x_continuous(limits = c(-0.3, 0.3)) +
+  xlab("") + ylab("") +
+  geom_errorbarh(data = HPD_ND_Mating %>% 
+  filter(Parameter != "(Intercept)") %>% 
+  mutate(Test = "Mating System (vs Monogamy)"), 
+  aes(y = Test, 
+      xmin = lower, 
+      xmax = upper, 
+      colour = Parameter), 
+  inherit.aes = F, height = 0, position = position_nudge(y = c(-0.1,-0.25, -0.4)), size = 1) +
+  geom_text(data = HPD_ND_Mating %>% 
+  filter(Parameter != "(Intercept)") %>% 
+  mutate(Test = "Mating System (vs Monogamy)"), 
+  aes(y = Test, 
+      x = lower, 
+      colour = Parameter, 
+      label = Parameter), 
+  inherit.aes = F, height = 0,
+  position = position_nudge(y = c(-0.1,-0.25, -0.4), x = -0.095), size = 3.25) +
+  scale_fill_manual(values = brewer.pal(8, "Greens")[6:8]) +
+  scale_color_manual(values = brewer.pal(8, "Greens")[6:8])
+
+
+# Subrtact the intercept (monogamy) from the partial estimates to get their estimated effect on speciation rate in comparison to the reference level (monogamy)
+Subset.B.pgls.summary <- b.mating %>% 
+  dplyr::bind_rows() %>% 
+  `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI")) %>% #estimate now in 5th col
+   dplyr::filter(str_detect(string = Parameter, "mating_system|(Intercept)")) %>% 
+  dplyr::mutate(Parameter = case_when(Parameter == "as.factor(mating_system)1" ~ "<5% Polygyny",
+                                      Parameter == "as.factor(mating_system)2" ~ "5-20% Polygny", 
+                                      Parameter == "as.factor(mating_system)3" ~ ">20% Polygny", 
+                                      TRUE ~ Parameter)) 
+
+#Factor for plot display
+Subset.B.pgls.summary$Parameter <- factor(Subset.B.pgls.summary$Parameter, 
+                                           levels = c("(Intercept)", "<5% Polygyny", "5-20% Polygny", ">20% Polygny")) 
+
+#Get HPD estimates
+HPD_B_Mating <- Subset.B.pgls.summary %>%
+  dplyr::group_by(Parameter) %>%
+  summarise(lower = HPDinterval(as.mcmc(Estimate), prob=0.95)[1],
+            upper = HPDinterval(as.mcmc(Estimate), prob=0.95)[2])
+
+Subset.b.mating.Plot <-Subset.B.pgls.summary %>% 
+  filter(Parameter != "(Intercept)") %>% 
+  mutate(Test = "Mating System (vs Monogamy)") %>%
+  ggplot(aes(x = Estimate, y = Test, fill = Parameter, colour = Parameter)) +
+  geom_density(aes(y = ..scaled..),
+               alpha = 0.4,
+               position = position_nudge(y= 1), colour="black")+
+  #geom_jitter(shape = 21, alpha = 0.5, size = 1, fill="black", position = position_nudge(y= 0.4))+
+  geom_vline(xintercept = 0)+
+  theme_minimal()+
+  theme(axis.text.y = element_blank(),
+        legend.position = "none") + scale_x_continuous(limits = c(-0.3, 0.3)) +
+  xlab("Estimate (Mating System vs Monogamy)") + ylab("") +
+  geom_errorbarh(data = HPD_B_Mating %>% 
+  filter(Parameter != "(Intercept)") %>% 
+  mutate(Test = "Mating System (vs Monogamy)"), 
+  aes(y = Test, 
+      xmin = lower, 
+      xmax = upper, 
+      colour = Parameter), 
+  inherit.aes = F, height = 0, position = position_nudge(y = c(-0.1,-0.25, -0.4)), size = 1) +
+  geom_text(data = HPD_B_Mating %>% 
+  filter(Parameter != "(Intercept)") %>% 
+  mutate(Test = "Mating System (vs Monogamy)"), 
+  aes(y = Test, 
+      x = lower, 
+      colour = Parameter, 
+      label = Parameter), 
+  inherit.aes = F, height = 0,
+  position = position_nudge(y = c(-0.1,-0.25, -0.4), x = -0.095), size = 3.25) +
+  scale_fill_manual(values = brewer.pal(8, "Greens")[6:8]) +
+  scale_color_manual(values = brewer.pal(8, "Greens")[6:8])
+
+ggarrange(Subset.ND.plot,Subset.ND.plot2,Subset.ND.Mating.Plot,
+          Subset.DR.plot,Subset.DR.plot2,Subset.DR.Mating.Plot,
+          Subset.B.plot,Subset.B.plot2,Subset.b.mating.Plot, ncol=3)
 ```
 
-**Figure S18:** Estimates of the effect of individual sexual selection components included in the PPCA (paternal care and wing size dimorphism) on three measures of speciation rate ($\lambda_{DR}$, $\lambda_{ND}$ and $\lambda_{BAMM}$). Estimates are presented as density intervals from pgls models on 300 phylogentic trees.  
+<!-- **Figure S18:** Estimates of the effect of individual sexual selection components included in the PPCA (paternal care and wing size dimorphism) on three measures of speciation rate ($\lambda_{DR}$, $\lambda_{ND}$ and $\lambda_{BAMM}$). Estimates are presented as density intervals from pgls models on 300 phylogentic trees.   -->
 
 # R Session information
   
