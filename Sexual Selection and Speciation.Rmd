@@ -1774,7 +1774,7 @@ grid.arrange(
 ```
 **Figure S9:** This figure is the same basic figure as seen in the manuscript (Figure 1). It provides model estimates for four response variables across 100 random trees alongside the MCC tree.
 
-**Table S7:** The estimates of the MCC models plotted above are based on the following data tables.
+**Table S8:** The estimates of the MCC models plotted above are based on the following data tables.
 ```{r Values For Models}
 MCC.DR.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates", split.table = Inf)
 MCC.ND.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates", split.table = Inf)
@@ -1784,7 +1784,7 @@ MCC.mu.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>
   
 From the estimates of 100 trees we calculated Highest posterior density (HPD) intervals. Note that these do no account for the CI of each estimate. Thus it is a more a representation of tree uncertainty than model uncertainty. 
 
-**Table S8:**  HPD intervals calculated for the above figure (*i.e.* models using RGB values of sexual dichromatism). The HPD range is determined using the ``hdi`` function with a 95 % credible interval. These intervals do not take into account the variance associated with each interval and thus are not an estimate of model precision. Intervals not overlapping zero suggest that 95 % of trees from the posterior generate a model estimate for the given parameter that is in the same direction (+ or -).
+**Table S9:**  HPD intervals calculated for the above figure (*i.e.* models using RGB values of sexual dichromatism). The HPD range is determined using the ``hdi`` function with a 95 % credible interval. These intervals do not take into account the variance associated with each interval and thus are not an estimate of model precision. Intervals not overlapping zero suggest that 95 % of trees from the posterior generate a model estimate for the given parameter that is in the same direction (+ or -).
 ```{r HPD, warning = FALSE}
 hpd.DR.top <- list()
 for(x in unique(DR.pgls.summary$Parameter)) {
@@ -1830,7 +1830,7 @@ hpd.Mu.top %>% pander(split.table = Inf, digits = 3, caption = "BAMM Extinction 
 
 From the HPD 95 % intervals and the intervals for the 95 % CI we can gain an indication of how much variability there is within a model in comparison to variability between trees. To do this we calculated the width of the HPD interval relative to the 95 % CI interval from the MCC tree.  
 
-**Table S9:** Model estimates from $\lambda_{BAMM}$ and $\mu_{BAMM}$ tip-rate estimates show high levels of variability between trees relative to estimates from $\lambda_{DR}$ and $\lambda_{ND}$. The interval ratio is calculated as the width of the HPD 95 % CI relative to the MCC 95 % CI. A value of 1 suggests that model estimates from 95 % of the trees fall within the MCC 95 % CI. Here, the large values for the estimates from BAMM tip-rates suggest that there is high variation in tip-rate estimates across trees that is not see within the DR and ND models.
+**Table S10:** Model estimates from $\lambda_{BAMM}$ and $\mu_{BAMM}$ tip-rate estimates show high levels of variability between trees relative to estimates from $\lambda_{DR}$ and $\lambda_{ND}$. The interval ratio is calculated as the width of the HPD 95 % CI relative to the MCC 95 % CI. A value of 1 suggests that model estimates from 95 % of the trees fall within the MCC 95 % CI. Here, the large values for the estimates from BAMM tip-rates suggest that there is high variation in tip-rate estimates across trees that is not see within the DR and ND models.
 ```{r HPD CI interval ratio}
 hpd.DR.top2 <- hpd.DR.top %>% t() %>% as.data.frame() %>% rownames_to_column(var = "Parameter")
 hpd.DR.top2$HPD.Interval <- hpd.DR.top2$Upper - hpd.DR.top2$Lower
@@ -2020,7 +2020,7 @@ saveRDS(Armenta.dredged.extinct.model, 'data/Armenta.dredged.extinct.model.rds')
 ```
 
 
-**Table S10:** The dredged models using a subset of species for which sexual dichromatism was measured using spectrophotometry. All four show the top model is one with no interactions, with $\delta AICc > 4$.
+**Table S11:** The dredged models using a subset of species for which sexual dichromatism was measured using spectrophotometry. All four show the top model is one with no interactions, with $\delta AICc > 4$.
 ```{r Armenta dredged}
 Armenta.dredged.ND.model <- readRDS("data/Armenta.dredged.ND.model.rds")
 Armenta.dredged.DR.model <- readRDS("data/Armenta.dredged.DR.model.rds")
@@ -2436,7 +2436,7 @@ grid.arrange(symmetrise_scale(Armenta.DR.plot, "x"),
 ```
 **Figure S11:** Measures of sexual dichromatism using spectrophotometry do not change the main patterns. This dataset is a subset of the complete dataset (n = 581), thus drawing conclusions for the other predictors (*e.g.* borderline long term temperature variation and spatial temperature variation) potentially risks type I error. Additionally, these environmental predictors were not measured differently in this analysis compared to the analysis using RGB measures of dichromatism for all species so we refrain from drawing conclusions on the effects of the environmental predictors based on this smaller dataset.
 
-**Table S11:** MCC estimates from the above plot are presented as numerical values below. 
+**Table S12:** MCC estimates from the above plot are presented as numerical values below. 
 ```{r Armenta moel summary}
 Armenta.MCC.DR.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates from Spec measures")
 Armenta.MCC.ND.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates from Spec measures")
@@ -2445,7 +2445,7 @@ Armenta.MCC.Mu.summary %>% filter(Parameter != "(Intercept)") %>% pander(caption
 ```
 
 
-**Table S12:**  HPD intervals calculated for the above figure (*i.e.* models using Spectrophotometry values of sexual dichromatism). These intervals do not take into account the variance associated with each estimate and thus are not an estimate of model precision. Intervals not overlapping zero suggest that 95 % of trees from the posterior generate a model estimate for the given parameter that are in the same direction (+ or -). These intervals are calculated in the same way as in Table S7.
+**Table S13:**  HPD intervals calculated for the above figure (*i.e.* models using Spectrophotometry values of sexual dichromatism). These intervals do not take into account the variance associated with each estimate and thus are not an estimate of model precision. Intervals not overlapping zero suggest that 95 % of trees from the posterior generate a model estimate for the given parameter that are in the same direction (+ or -). These intervals are calculated in the same way as in Table S9.
 ```{r Armenta HPD, warning = FALSE}
 Armenta.hpd.DR.top <- list()
 Armenta.DR.pgls.summary <- na.omit(Armenta.DR.pgls.summary)
@@ -2629,7 +2629,7 @@ Subset.dredged.extinct.model <- pdredge(MCC.Extinction.Subset.global, fixed = c(
 saveRDS(Subset.dredged.spec.model, 'data/Subset.dredged.extinct.model.rds')
 ```
   
-**Table S13:** All top models ($\delta AICc > 4$) using male-biased sexual selection measures do not contain interactions between sexual selection and the environmental variables. Thus interaction terms were not included in further analysis.
+**Table S14:** All top models ($\delta AICc > 4$) using male-biased sexual selection measures do not contain interactions between sexual selection and the environmental variables. Thus interaction terms were not included in further analysis.
 
 ```{r Table for SS}
 Subset.dredged.ND.model <- readRDS("data/Subset.dredged.ND.model.rds")
@@ -3173,7 +3173,7 @@ grid.arrange(symmetrise_scale(Subset.DR.plot, "x"),
 ```
 **Figure S13:** PGLS analyses using measures of male-biased sexual selection (*n* = 2,465) using three measures of speciation ($\lambda_{DR}$, $\lambda_{ND}$, $\lambda_{BAMM}$) and one measure of extinction ($\mu_{BAMM}$) as response variables. The numerical values for the model estimates using the MCC tree and HPD intervals of estimates from 100 random trees can be found in the ESM. Density curves are based on estimates from 100 trees and the circle below with error bars is the estimate and 95 % CIs from the MCC tree. For this figure we removed outliers from estimates coming from the 100 random trees for BAMM models in order to interpret the MCC 95 % CIs. This figure is part **b** of Figure 1 within the manuscript.
 
-**Table S14:** MCC model estimates from the above model are presented here as numberical values with 95 % CIs.
+**Table S15:** MCC model estimates from the above model are presented here as numberical values with 95 % CIs.
 ```{r Table for SS plots}
 Subset.MCC.DR.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates from Male-bias SS", split.table = Inf)
 Subset.MCC.ND.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates from Male-bias SS", split.table = Inf)
@@ -3182,7 +3182,7 @@ Subset.MCC.Mu.summary %>% select(-model_name) %>% filter(Parameter != "(Intercep
 ```
 
 
-**Table S15:** HPD intervals are calculated for the above figure (i.e. models using Male-bias sexual selection measures). using this measure the models using $\lambda_{DR}$ have model estimates that fall on the positive side 95 % of the time in 100 trees. For $\lambda_{ND}$, there is a positive skew, however the 95 % HPD interval overlaps zero. $\lambda_{BAMM}$ also shows a lesser positive skew. These intervals do not take into account the variance associated with each estimate and thus are not an estimate of model precision. Intervals not overlapping zero suggest that 95 % of trees from the posterior generate a model estimate for the given parameter are in the same direction (+ or -). These intervals are calculated in the same way as in Table S7 and Table S9.  
+**Table S16:** HPD intervals are calculated for the above figure (i.e. models using Male-bias sexual selection measures). using this measure the models using $\lambda_{DR}$ have model estimates that fall on the positive side 95 % of the time in 100 trees. For $\lambda_{ND}$, there is a positive skew, however the 95 % HPD interval overlaps zero. $\lambda_{BAMM}$ also shows a lesser positive skew. These intervals do not take into account the variance associated with each estimate and thus are not an estimate of model precision. Intervals not overlapping zero suggest that 95 % of trees from the posterior generate a model estimate for the given parameter are in the same direction (+ or -). These intervals are calculated in the same way as in Table S9.  
 ```{r SS HPD, warning = FALSE}
 Subset.hpd.DR.top <- list()
 Subset.DR.pgls.summary <- na.omit(Subset.DR.pgls.summary)
@@ -3511,7 +3511,7 @@ Subset.ND.plot <-Subset.ND.pgls.summary %>% filter(Parameter != "(Intercept)") %
   ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
   geom_density(aes(y = ..scaled..),
                position = position_nudge(y= 0.6), fill="orange", colour="black")+
-  geom_jitter(shape = 21, alpha = 0.5, size = 1, colour="black", fill="orange")+
+  geom_jitter(shape = 21, alpha = 0, size = 1, colour="black", fill="orange")+
   geom_vline(xintercept = 0)+
   theme_minimal()+
   theme(axis.text.y = element_blank(),
@@ -3534,7 +3534,7 @@ Subset.DR.plot <-Subset.DR.pgls.summary %>% filter(Parameter != "(Intercept)") %
   ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
   geom_density(aes(y = ..scaled..),
                position = position_nudge(y= 0.6),fill="orange", colour="black")+
-  geom_jitter(shape = 21, alpha = 0.5, size = 1,fill="black", colour="orange")+
+  geom_jitter(shape = 21, alpha = 0, size = 1,fill="black", colour="orange")+
   geom_vline(xintercept = 0)+
   theme_minimal()+
   theme(axis.text.y = element_blank(),
@@ -3555,7 +3555,7 @@ Subset.B.plot <-Subset.B.pgls.summary %>% filter(Parameter != "(Intercept)") %>%
   ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
   geom_density(aes(y = ..scaled..),
                position = position_nudge(y= 0.6),fill="orange", colour="black")+
-  geom_jitter(shape = 21, alpha = 0.5, size = 1,fill="black", colour="orange")+
+  geom_jitter(shape = 21, alpha = 0, size = 1,fill="black", colour="orange")+
   geom_vline(xintercept = 0)+
   theme_minimal()+
   theme(axis.text.y = element_blank(),
@@ -3580,7 +3580,7 @@ Subset.ND.plot2 <-Subset.ND.pgls.summary %>% filter(Parameter != "(Intercept)") 
   ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
   geom_density(aes(y = ..scaled..),
                position = position_nudge(y= 0.6), fill="darkturquoise", colour="black")+
-  geom_jitter(shape = 21, alpha = 0.5, size = 1, colour="black", fill="darkturquoise")+
+  geom_jitter(shape = 21, alpha = 0, size = 1, colour="black", fill="darkturquoise")+
   geom_vline(xintercept = 0)+
   theme_minimal()+
   theme(axis.text.y = element_blank(),
@@ -3599,7 +3599,7 @@ Subset.DR.plot2 <-Subset.DR.pgls.summary %>% filter(Parameter != "(Intercept)") 
   ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
   geom_density(aes(y = ..scaled..),
                position = position_nudge(y= 0.6),fill="darkturquoise", colour="black")+
-  geom_jitter(shape = 21, alpha = 0.5, size = 1,fill="black", colour="darkturquoise")+
+  geom_jitter(shape = 21, alpha = 0, size = 1,fill="black", colour="darkturquoise")+
   geom_vline(xintercept = 0)+
   theme_minimal()+
   theme(axis.text.y = element_blank(),
@@ -3618,7 +3618,7 @@ Subset.B.plot2 <-Subset.B.pgls.summary %>% filter(Parameter != "(Intercept)") %>
   ggplot(aes(x = Estimate, y = Parameter, fill = Parameter)) +
   geom_density(aes(y = ..scaled..),
                position = position_nudge(y= 0.6),fill="darkturquoise", colour="black")+
-  geom_jitter(shape = 21, alpha = 0.5, size = 1,fill="black", colour="darkturquoise")+
+  geom_jitter(shape = 21, alpha = 0, size = 1,fill="black", colour="darkturquoise")+
   geom_vline(xintercept = 0)+
   theme_minimal()+
   theme(axis.text.y = element_blank(),
@@ -3634,14 +3634,14 @@ Subset.DR.pgls.summary <- dr.mating %>%
   dplyr::bind_rows() %>% 
   `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI")) %>% #estimate now in 5th col
    dplyr::filter(str_detect(string = Parameter, "mating_system|Intercept")) %>% 
-  dplyr::mutate(Parameter = case_when(Parameter == "as.factor(mating_system)1" ~ "<5% Polygyny",
-                                      Parameter == "as.factor(mating_system)2" ~ "5-20% Polygny", 
-                                      Parameter == "as.factor(mating_system)3" ~ ">20% Polygny", 
+  dplyr::mutate(Parameter = case_when(Parameter == "as.factor(mating_system)1" ~ "<5% polygyny",
+                                      Parameter == "as.factor(mating_system)2" ~ "5-20% polygyny", 
+                                      Parameter == "as.factor(mating_system)3" ~ ">20% polygyny", 
                                       TRUE ~ Parameter)) 
 
 #Factor for plot display
 Subset.DR.pgls.summary$Parameter <- factor(Subset.DR.pgls.summary$Parameter, 
-                                           levels = c("(Intercept)", "<5% Polygyny", "5-20% Polygny", ">20% Polygny")) 
+                                           levels = c("(Intercept)", "<5% polygyny", "5-20% polygyny", ">20% polygyny")) 
 
 #Get HPD estimates
 HPD_DR_Mating <- Subset.DR.pgls.summary %>%
@@ -3689,14 +3689,14 @@ Subset.ND.pgls.summary <- nd.mating %>%
   dplyr::bind_rows() %>% 
   `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI")) %>% #estimate now in 5th col
    dplyr::filter(str_detect(string = Parameter, "mating_system|Intercept")) %>% 
-  dplyr::mutate(Parameter = case_when(Parameter == "as.factor(mating_system)1" ~ "<5% Polygyny",
-                                      Parameter == "as.factor(mating_system)2" ~ "5-20% Polygny", 
-                                      Parameter == "as.factor(mating_system)3" ~ ">20% Polygny",
+  dplyr::mutate(Parameter = case_when(Parameter == "as.factor(mating_system)1" ~ "<5% polygyny",
+                                      Parameter == "as.factor(mating_system)2" ~ "5-20% polygyny", 
+                                      Parameter == "as.factor(mating_system)3" ~ ">20% polygyny",
                                       TRUE ~ Parameter)) 
 
 #Factor for plot display
 Subset.ND.pgls.summary$Parameter <- factor(Subset.ND.pgls.summary$Parameter, 
-                                           levels = c("(Intercept)", "<5% Polygyny", "5-20% Polygny", ">20% Polygny")) 
+                                           levels = c("(Intercept)", "<5% polygyny", "5-20% polygyny", ">20% polygyny")) 
 
 #Get HPD estimates
 HPD_ND_Mating <- Subset.ND.pgls.summary %>%
@@ -3743,14 +3743,14 @@ Subset.B.pgls.summary <- b.mating %>%
   dplyr::bind_rows() %>% 
   `colnames<-`(c("Parameter", "Estimate", "LCI", "UCI")) %>% #estimate now in 5th col
    dplyr::filter(str_detect(string = Parameter, "mating_system|(Intercept)")) %>% 
-  dplyr::mutate(Parameter = case_when(Parameter == "as.factor(mating_system)1" ~ "<5% Polygyny",
-                                      Parameter == "as.factor(mating_system)2" ~ "5-20% Polygny", 
-                                      Parameter == "as.factor(mating_system)3" ~ ">20% Polygny", 
+  dplyr::mutate(Parameter = case_when(Parameter == "as.factor(mating_system)1" ~ "<5% polygyny",
+                                      Parameter == "as.factor(mating_system)2" ~ "5-20% polygyny", 
+                                      Parameter == "as.factor(mating_system)3" ~ ">20% polygyny", 
                                       TRUE ~ Parameter)) 
 
 #Factor for plot display
 Subset.B.pgls.summary$Parameter <- factor(Subset.B.pgls.summary$Parameter, 
-                                           levels = c("(Intercept)", "<5% Polygyny", "5-20% Polygny", ">20% Polygny")) 
+                                           levels = c("(Intercept)", "<5% polygyny", "5-20% polygyny", ">20% polygyny")) 
 
 #Get HPD estimates
 HPD_B_Mating <- Subset.B.pgls.summary %>%
@@ -3770,7 +3770,7 @@ Subset.b.mating.Plot <-Subset.B.pgls.summary %>%
   theme_minimal()+
   theme(axis.text.y = element_blank(),
         legend.position = "none") + scale_x_continuous(limits = c(-0.3, 0.3)) +
-  xlab("Estimate (Mating System vs Monogamy)") + ylab("") +
+  xlab("Estimate (mating system vs monogamy)") + ylab("") +
   geom_errorbarh(data = HPD_B_Mating %>% 
   filter(Parameter != "(Intercept)") %>% 
   mutate(Test = "Mating System (vs Monogamy)"), 
