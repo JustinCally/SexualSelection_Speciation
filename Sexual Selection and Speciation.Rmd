@@ -82,19 +82,19 @@ source("functions/Vdodge_function.R")
 source('functions/symmetrise_scale.R')
 source('functions/Correlation_matrix.R')
 source('functions/gheatmap2.R') #Gets rid of spaces between tiles
-knitr::opts_chunk$set(cache=TRUE)
+knitr::opts_chunk$set(cache=TRUE, warning =F)
 
-supp_figs <- captioner::captioner(prefix = "Figure S", auto_space = F)
-
-
-counter_fig <- function() {
-  if(!exists('counter_iteration')) {
-    counter_iteration <<- 1L
-  } else {
-    counter_iteration <<- counter_iteration + 1L
-  }
-  print(counter_iteration)
-}
+# supp_figs <- captioner::captioner(prefix = "Figure S", auto_space = F)
+# 
+# 
+# counter_fig <- function() {
+#   if(!exists('counter_iteration')) {
+#     counter_iteration <<- 1L
+#   } else {
+#     counter_iteration <<- counter_iteration + 1L
+#   }
+#   print(counter_iteration)
+# }
 ```
 
 # Compiling the data
