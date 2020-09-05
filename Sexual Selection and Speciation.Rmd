@@ -3173,7 +3173,7 @@ grid.arrange(symmetrise_scale(Subset.DR.plot, "x"),
 ```
 **Figure S13:** PGLS analyses using measures of male-biased sexual selection (*n* = 2,465) using three measures of speciation ($\lambda_{DR}$, $\lambda_{ND}$, $\lambda_{BAMM}$) and one measure of extinction ($\mu_{BAMM}$) as response variables. The numerical values for the model estimates using the MCC tree and HPD intervals of estimates from 100 random trees can be found in the ESM. Density curves are based on estimates from 100 trees and the circle below with error bars is the estimate and 95 % CIs from the MCC tree. For this figure we removed outliers from estimates coming from the 100 random trees for BAMM models in order to interpret the MCC 95 % CIs. This figure is part **b** of Figure 1 within the manuscript.
 
-**Table S15:** MCC model estimates from the above model are presented here as numberical values with 95 % CIs.
+**Table S15:** MCC model estimates from the above model are presented here as numerical values with 95 % CIs.
 ```{r Table for SS plots}
 Subset.MCC.DR.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates from Male-bias SS", split.table = Inf)
 Subset.MCC.ND.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates from Male-bias SS", split.table = Inf)
