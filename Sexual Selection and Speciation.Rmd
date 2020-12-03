@@ -103,7 +103,7 @@ We aimed to compile data on Passerine birds, which represent the largest group f
 
 ## Speciation Rate
 
-To obtain speciation rate estimates we used Bayesian Analysis of Macroevolutionary Mixtures (BAMM). Additionally, we compared our BAMM output files (event data)  to an existing rate dataset [@Harvey_2017].
+To obtain speciation rate estimates, we used Bayesian Analysis of Macroevolutionary Mixtures (BAMM). Additionally, we compared our BAMM output files (event data)  to an existing rate dataset [@Harvey_2017].
 
 Rather than obtaining one estimate of speciation rate from one tree, we ran BAMM 100 times on 100 trees plus an MCC tree to obtain uncertainty estimates of the speciation rate generated from the phylogeny produced by @Jetz_2012. We also estimated extinction rate from BAMM and speciation rates using the diversification rate and node density statistic ($\lambda_{DR}$ and ($\lambda_{ND}$). See @Rabosky_diversification_2018 for a comparison of methods.
 
@@ -181,7 +181,7 @@ write.csv(bird.range.size, 'data/bird.range.size.csv')
 
 # Generating biologically relevant predictors
 
-In this study we assess the relationship between sexual selection and extinction risk. In doing so we attempt to take into account as many other predictors of extinction as possible, primarily through environmental variables. Our model structure seeks to contain:
+In this study, we assess the relationship between sexual selection and extinction risk. In doing so we attempt to take into account as many other predictors of extinction as possible, primarily through environmental variables. Our model structure seeks to contain:
 
 
  Extinction/Diversification ~ Sexual selection  
@@ -210,7 +210,7 @@ head(complete.dataframe) %>%
 
 ## Environmental Spatial Variability PCAs
 
-To obtain estimates of spatial variability in environment we performed PCAs of the standard errors of the bioclimatic variables across the 1000 random points extracted per species (excluding seasonality in temperature and precipitation). We expect variability to increase with increased range size. To correct for this association, and to be able to include both variables in the model, we took the residuals from GAM models of the relationship between PCA components and range size.
+To obtain estimates of spatial variability in environment, we performed PCAs of the standard errors of the bioclimatic variables across the 1000 random points extracted per species (excluding seasonality in temperature and precipitation). We expect variability to increase with increased range size. To correct for this association, and to be able to include both variables in the model, we took the residuals from GAM models of the relationship between PCA components and range size.
 
 **Table S1:** Loadings for the first two PCs, from a PCA on the variation (standard error, where n ~ 1,000) of each bioclim variable except the standard deviation of temperature seasonality (sd.bioclim4) and the standard error of precipitation seasonality (sd.bioclim15), as these are already measures of variability and based on other bioclimatic variables.
 ```{r PCA bioclim}
@@ -345,7 +345,7 @@ We checked the correlations between environmental predictors used in subsequent 
  + Long-term variability of temperature (LIG)  
  + NPP  
 
-To check the correlations between the environmental predictors to be used in the PGLS models we inspected the following correlation plots with the correlation value plotted:
+To check the correlations between the environmental predictors to be used in the PGLS models, we inspected the following correlation plots with the correlation value plotted:
 
 ```{r model predictor covariance, fig.width=10, fig.height=10}
 #Draw plot
@@ -507,7 +507,7 @@ grid.arrange(es.plot, nd.plot, tb.plot, nrow = 3)
 
 ### Set up BAMM parameters
 
-For the use of BAMM we used the following code to generate the parameters across the 100 trees. Each parameter value is specified in this code chunk to ensure reproducibility. These same parameters were also used for the MCC tree (with the seed set at 2500).  
+For the use of BAMM, we used the following code to generate the parameters across the 100 trees. Each parameter value is specified in this code chunk to ensure reproducibility. These same parameters were also used for the MCC tree (with the seed set at 2500).  
 
 
 ```{r BAMM settings, eval = FALSE, results = 'hide'}
@@ -749,7 +749,6 @@ for (x in name.passerine.tree) {generateControlFile(file = bammcontrolfile[[x]],
   
 ### Run analysis
 
-
 BAMM can be run through the terminal through the following syntax: ``bamm -c control_tree_xxxx.txt``. To generate these commands we can use a loop function, from which we get:
 
 ```{r BAmm export, eval = FALSE}
@@ -765,9 +764,9 @@ The analysis was run over multiple CPU's, each generating a respective MCMC and 
 
 ### Read in the event data and extract tip data
 
-Now we have a series of trees and event data we can read in. Firstly and most importantly let's check for convergence in the MCC tree through the following:
+We checked the convergence of BAMM results by assessing effective sample size (ESS). 
 
-**Table S3:** Effective sample size (ESS) for the two key BAMM parameters (number of evolutionary shifts and log-Likelihood) for the run on the MCC indicate that BAMM converges (ESS > 200). 
+**Table S3:** ESS for the two key BAMM parameters (number of evolutionary shifts and log-Likelihood) for the run on the MCC indicate that BAMM converges (ESS > 200). 
 
 ```{r BAMM inspection}
 #Read in the tree and MCMC to check for convergence 
@@ -787,7 +786,7 @@ postburn <- MCC.BAMM.mcmc[burnstart:nrow(MCC.BAMM.mcmc), ]
 cbind(effectiveSize(postburn$N_shifts), effectiveSize(postburn$logLik)) %>% `colnames<-`(c("N_Shifts", "logLik")) %>% `rownames<-`("Effective Sample Size") %>% pander()
 ```
 
-Those values are well above 200, so we can use the MCC data in analysis! We can also check the convergence of BAMM across 100 runs of BAMM. The Raw MCMCs are not included in this file or repository but we can read in a dataframe that has extracted the ESS for each of the runs.
+We can also check the convergence of BAMM across 100 runs of BAMM. The Raw MCMCs are not included in this file or repository but we can read in a dataframe that has extracted the ESS for each of the runs.
 
 **Table S4:** For the 100 trees that BAMM was run on effective sample size (ESS) for the two key BAMM parameters (number of evolutionary shifts and log-Likelihood) also indicates that BAMM converges with the minimum for each parameter across the 100 trees being over 200.
 ```{r ESS}
@@ -1221,7 +1220,7 @@ saveRDS(MCC.ND.top, 'data/MCC.ND.top.rds')
 ```
 
   
-From these models we obtained a distribution of the estimates for the models alongside the 95 % CIs of the MCC model. This enabled us to show the variation between trees, and the variation associated with the top MCC model. Given the variability across trees we ran 1000 ND and DR models, each allowed to estimate a phylogenetic signal ($\lambda$). The models were saved as an `.rds` object and read back into R with key coefficients extracted. Below we provide the code for this: 
+From these models we obtained a distribution of the estimates for the models alongside the 95 % CIs of the MCC model. This enabled us to show the variation between trees, and the variation associated with the top MCC model. Given the variability across phylogenetic trees we ran 1000 ND and DR models. Each model had an independently derived phylogenetic signal ($\lambda$) based on the unique phylogenetic tree used. The models were saved as an `.rds` object and read back into R with key coefficients extracted. Below we provide the code for this: 
 
 ```{r trycatch all models, eval = F}
 #Read in DR models and extract estimates:
@@ -3177,12 +3176,12 @@ grid.arrange(symmetrise_scale(Subset.DR.plot, "x"),
 ```{r Table for SS plots}
 Subset.MCC.DR.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC DR Estimates from Male-bias SS", split.table = Inf)
 Subset.MCC.ND.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC ND Estimates from Male-bias SS", split.table = Inf)
-Subset.MCC.Lambda.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Speciation Estimates from Male-bias SS", split.table = Inf)
-Subset.MCC.Mu.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Extinction Estimates from Male-bias SS", split.table = Inf)
+Subset.MCC.Lambda.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Speciation Estimates from Male-biased SS", split.table = Inf)
+Subset.MCC.Mu.summary %>% select(-model_name) %>% filter(Parameter != "(Intercept)") %>% pander(caption = "MCC BAMM Extinction Estimates from Male-biased SS", split.table = Inf)
 ```
 
 
-**Table S16:** HPD intervals are calculated for the above figure (i.e. models using Male-bias sexual selection measures). using this measure the models using $\lambda_{DR}$ have model estimates that fall on the positive side 95 % of the time in 100 trees. For $\lambda_{ND}$, there is a positive skew, however the 95 % HPD interval overlaps zero. $\lambda_{BAMM}$ also shows a lesser positive skew. These intervals do not take into account the variance associated with each estimate and thus are not an estimate of model precision. Intervals not overlapping zero suggest that 95 % of trees from the posterior generate a model estimate for the given parameter are in the same direction (+ or -). These intervals are calculated in the same way as in Table S9.  
+**Table S16:** HPD intervals for models using male-biased sexual selection measures. Across 100 trees, estimates from models using $\lambda_{DR}$ are positive >95% of the time. For $\lambda_{ND}$, there is a positive skew, however the 95 % HPD interval overlaps zero. $\lambda_{BAMM}$ also shows a lesser positive skew. These intervals do not take into account the variance associated with each estimate and thus are not an estimate of model precision. Intervals not overlapping zero suggest that 95 % of trees from the posterior generate a model estimate for the given parameter are in the same direction (+ or -). These intervals are calculated in the same way as in Table S9.  
 ```{r SS HPD, warning = FALSE}
 Subset.hpd.DR.top <- list()
 Subset.DR.pgls.summary <- na.omit(Subset.DR.pgls.summary)
