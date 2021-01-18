@@ -1,0 +1,152 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Male-biased sexual selection, but not sexual dichromatism, predicts speciation in birds},
+            pdfauthor={Justin G. Cally, Devi Stuart-Fox, Luke Holman, James Dale and Iliana Medina},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\providecommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{Male-biased sexual selection, but not sexual dichromatism, predicts
+speciation in birds}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{Justin G. Cally\textsuperscript{†§}, Devi Stuart-Fox\textsuperscript{†},
+Luke Holman\textsuperscript{†}, James Dale\textsuperscript{‡} and Iliana
+Medina\textsuperscript{†}}
+    \preauthor{\centering\large\emph}
+  \postauthor{\par}
+    \date{}
+    \predate{}\postdate{}
+  
+\usepackage{microtype} \usepackage[all]{hypcap} \usepackage{amsmath} \usepackage{booktabs} \usepackage{caption} \usepackage[labelfont=bf]{caption} \usepackage{titling}
+
+\pretitle{\begin{flushleft}\LARGE}
+\posttitle{\par\end{flushleft}\vskip 0.5em}
+\preauthor{\begin{flushleft}\large \lineskip 0.5em}
+\postauthor{\par\end{flushleft}} \predate{\begin{flushleft}\large}
+\postdate{\par\end{flushleft}}
+
+\usepackage{fancyhdr}
+
+\pagestyle{fancy} \fancyhead[L]{\textsl{\leftmark}}
+\rhead[]{Sexual selection predicts speciation}
+
+\usepackage[noabbrev,capitalise]{cleveref} \usepackage{titlefoot} \usepackage{amssymb} \usepackage{rotating} \usepackage{setspace}
+
+\onehalfspacing 
+
+\usepackage[font={small}]{caption} \usepackage{epigraph}
+
+\setlength\epigraphwidth{5.25in} \setlength\epigraphrule{0pt}
+\setlength\beforeepigraphskip{1\baselineskip}
+\setlength\afterepigraphskip{2\baselineskip}
+
+\renewcommand*{\textflush}{flushright} \renewcommand*{\epigraphsize}{\footnotesize\itshape} \usepackage{titlesec} \titleformat{\section}{\normalfont\scshape\LARGE}{\thesection}{1em}{} \titleformat{\subsection}{\normalfont\Large}{\thesubsection}{1em}{} \titleformat{\subsubsection}{\normalfont\large}{\thesubsubsection}{1em}{} \usepackage{abstract} \renewcommand{\abstractnamefont}{\normalfont\Large} \usepackage[hang, flushmargin]{footmisc} \usepackage{hyperref}
+
+\hypersetup{colorlinks=true, hyperfootnotes=false, linkcolor=blue, filecolor=blue, urlcolor=blue}
+
+\usepackage{xcolor} \renewcommand\thefootnote{\textcolor{black}{\arabic{footnote}}}
+
+\raggedbottom
+
+\begin{document}
+\maketitle
+
+\maketitle\unmarkedfntext{\textsuperscript{†}School of BioSciences, The University of Melbourne, Parkville, VIC, 3052, Australia \\
+\textsuperscript{‡}School of Natural and Computational Sciences, Massey University (Albany Campus), Auckland, New Zealand \\
+\textsuperscript{§}\textit{justin.g.cally@gmail.com}}
+
+\phantomsection
+
+\hypertarget{acknowledgements}{%
+\section{Acknowledgements}\label{acknowledgements}}
+
+We thank Adnan Moussalli for his assistance in conducting BAMM runs
+across 100 phylogenetic trees, Ignacio Quintero for providing BAMM
+results for comparison and for discussion of the results as well as
+Chris Cooney for comments on the manuscript.
+
+\phantomsection
+
+\hypertarget{author-contributions}{%
+\section{Author Contributions}\label{author-contributions}}
+
+All authors contributed to conception, design and approach to analyses;
+J.G.C. and J.D. compiled the data; J.G.C. and I.M. conducted analyses;
+J.G.C. wrote the first draft of the manuscript; all authors contributed
+substantially to further manuscript revisions.
+
+\phantomsection
+
+\hypertarget{data-accessibility}{%
+\section{Data Accessibility}\label{data-accessibility}}
+
+We have sought to make the data and Supplementary Material (including
+\texttt{R} code) freely accessible to readers. The code and
+Supplementary Material for this manuscript are available on
+\href{https://justincally.github.io/SexualSelection_Speciation/}{GitHub}
+and as an attached HTML document (Supplementary Material) for reviewers.
+Data is archived in the adjoined GitHub repository and will be made
+publicly available on acceptance.
+
+
+\end{document}
