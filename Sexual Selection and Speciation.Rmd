@@ -1,7 +1,6 @@
 ---
 title: Male-biased sexual selection, but not sexual dichromatism, predicts speciation in birds
-author: 
-# "Justin G. Cally, Devi Stuart-Fox, Luke Holman, Iliana Medina Guzmán"
+author: "Justin G. Cally, Devi Stuart-Fox, Luke Holman, James Dale and Iliana Medina"
 csl: References/evolution.csl
 output:
   html_document:

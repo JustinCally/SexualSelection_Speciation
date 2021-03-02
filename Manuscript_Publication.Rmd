@@ -150,28 +150,6 @@ Here, we investigate the association between sexual selection and diversificatio
 
 We use multiple approaches for quantifying speciation and extinction rates at the tips of phylogenetic trees, including Bayesian Analysis of Macroevolutionary Mixtures [BAMM; @Beaulieu_2015; @Rabosky_Extinction_2016; @Moore_2016; @Rabosky_BAMM_flawed_2017], as well as older but reliable tip-rate statistics, namely diversification rate ($\lambda_{DR}$) and node density ($\lambda_{ND}$) [@Jetz_2012]. Our results show that (*i*) a composite measure of sexual selection, but not sexual dichromatism, significantly predicts speciation rates, (*ii*) the significant association between the composite measure of sexual selection and speciation rate is largely driven by sexual size dimorphism, (*iii*) species with smaller ranges have higher speciation rates and (*iv*) there is no evidence that environmental variables or their interaction with sexual selection have an impact on diversification rates. Therefore, we provide evidence at a very large scale that sexual selection can have positive effects on diversification in the largest radiation of birds. Furthermore, we suggest that the use of sexual dichromatism as the sole proxy for sexual selection should be reconsidered, since it appears to be inconsistently associated with the operation of sexual selection. 
 
-```{r lit, echo = FALSE, warning=FALSE}
-options(knitr.kable.NA = ' ')
-
-literature_table %>%
-  select(-Citation) %>%
-  # pandoc.table(style = "rmarkdown", 
-  #              caption = "Review of studies testing the association between sexual selection and speciation")
-  knitr::kable(format = "latex",
-        booktabs = T,
-        escape = T,
-        caption = "Previous studies testing the association between sexual selection and speciation") %>%
-  kableExtra::kable_styling(latex_options = c("HOLD_position", "scale_down"),
-                            full_width = FALSE, 
-                            font_size = 8) %>%
-  kableExtra::column_spec(5, "27em") %>%
-  kableExtra::column_spec(3, "10em") %>%
-  kableExtra::column_spec(4, "3em") %>%
-  kableExtra::collapse_rows(1:2, row_group_label_position = "identity") %>% 
-  kableExtra::footnote(general_title = "", 
-                       general = "Studies were obtained by searching 'Web of Science' for articles published from 2011 for terms containing ‘speciation’, ‘diversification’ and ‘sexual selection’. We summarised all the studies we found relevant and comparable to our study.", threeparttable = TRUE)
-```
-
 \phantomsection
 # Materials and methods
 
@@ -244,15 +222,7 @@ We found no evidence that extinction ($\mu_{BAMM}$) was impacted by the extent o
 
 Estimates of the effect of predictor variables on speciation rates varied across phylogenetic trees, especially in the BAMM rates ($\lambda_{BAMM}$ and $\mu_{BAMM}$), where the 95 % HPD interval across PGLS model estimates from 100 trees was often > 20 times larger than the 95 % confidence interval for estimates from a single PGLS model using the MCC tree. This contrasts with variation across trees for the other rate estimates ($\lambda_{DR}$ and $\lambda_{ND}$), where the 95 % HPD interval of model estimates for pgls models using 1,000 trees was near-equivelant to the 95 % confidence interval calculated for PGLS model estimates of the MCC tree (\href{https://justincally.github.io/SexualSelection_Speciation/#pgls_models_on_bamm_estimates}{Table S9}). The great majority of earlier studies have based their estimates on a single consensus tree due to the computational requirements of BAMM. However, our results suggest that BAMM estimates between alternative, similarly plausible phylogenies vary substantially. Mean measures of speciation rate across 100 trees were positively correlated between measures ($\lambda_{DR}$ - $\lambda_{BAMM}$: *r*=`r round(cor(all.trees.join$DR, all.trees.join$mean.lambda), digits = 2)`, $\lambda_{DR}$ - $\lambda_{ND}$: *r*=`r round(cor(all.trees.join$DR, all.trees.join$ND), digits = 2)`, $\lambda_{ND}$ - $\lambda_{BAMM}$: *r*=`r round(cor(all.trees.join$ND, all.trees.join$mean.lambda), digits = 2)`; \href{https://justincally.github.io/SexualSelection_Speciation/#additional_figures_and_tables}{Figure S15}). The calculation of BAMM rates can be affected by the settings of the run and the use of different priors. We therefore compared the estimate of our MCC tree with that of previously published analyses on birds and found a high correlation (*r*=`r round(cor(Harvey.vs.us$mean.lambda, Harvey.vs.us$Harvey.lambda, use = "pairwise"), digits = 2)`, \href{https://justincally.github.io/SexualSelection_Speciation/#bamm_measures_of_speciation_and_extinction}{Figure S6, Figure S8}, @Harvey_2017). Full details of the BAMM results are presented as supplementary materials.   
 
-![Speciation rate ($\lambda_{DR}$) across all passerine birds (*n* = 5,965) with estimates of sexual dichromatism, range size available for 5,812 species and an index of male-biased sexual selection available for 2,465 species. Across these species there was a small but significant negative association between $\lambda_{DR}$ and log-range size as well as a significant positive association between $\lambda_{DR}$ and male-biased sexual selection but no significant association between $\lambda_{DR}$ and sexual dichromatism based on RGB measures. $\lambda_{DR}$ are those from the MCC tree and images of birds are from the _Handbook of the Birds of the World_. Clockwise the six species are: _Sporophila bouvronides_, _Euplectes franciscanus_, _Phainopepla nitens_, _Paradisaea rubra_, _Malurus pulcherrimus_, _Lepidothrix coeruleocapilla_. Edge colours for the terminal branch correspond to $\lambda_{DR}$ but all precluding branches have been generated for graphical purposes using ancestral character state estimation [@phytools_2012] and should not be interpreted. Illustrations reproduced by permission of Lynx Editions. \label{Speciation_Figure}](Figures/DRSpeciationFigure.pdf)  
-
-![Model estimates (a) showing the effect size (i.e. slope) of log-range size and sexual dichromatism on speciation and extinction rates using PGLS analyses with the sexual dichromatism dataset (RGB values, *n* = 5,812). (b) depicts the scatter plot of speciation rate ($\lambda_{DR}$) and log-range size with the model estimate presented as a dashed line. (c) shows the scatter plot of speciation rate ($\lambda_{DR}$) and male-biased sexual selection (*n* = 2,465). Similar to (a), (d) presents model estimates for PGLS analyses using a restricted dataset with measures of an index of male-biased sexual selection (*n* = 2,465) and shows the effect of log-range size and male-biased sexual selection on speciation and extinction rates. Both datasets were used for analyses with three measures of speciation ($\lambda_{DR}$, $\lambda_{ND}$, $\lambda_{BAMM}$) and one measure of extinction ($\mu_{BAMM}$) as response variables. The numerical values for the model estimates using the MCC tree and HPD intervals of estimates from 1,000 randomly sampled trees (for $\lambda_{DR}$ and $\lambda_{ND}$) or 100 randomly sampled trees for $\lambda_{BAMM}$ and $\mu_{BAMM}$ can be found in the Supplementary Information. Density curves are based on model estimates from 1,000/100 trees and the circle below with error bars is the estimate and 95% CIs from the MCC tree. For this figure we removed outliers from estimates coming from the 100 randomly sampled trees for BAMM models in order to be able to visualise the MCC 95% CIs. \label{model_results}](Figures/Estimates_and_scatter_edit.pdf)  
-
-![Estimates of the effect of individual sexual selection components included in the PPCA (paternal care, sexual size dimorphism and mating system) on three measures of speciation rate ($\lambda_{DR}$, $\lambda_{ND}$ and $\lambda_{BAMM}$). Estimates are presented as density intervals from pgls models on 300 phylogentic trees that used species with available data for these sexual selection measures (*n* = 2,465). The bar under each density ridge is the 95 % Highest Posterior Density Interval. Given that the mating system is a categorical variable, model estimates for three polygynous mating system levels are in reference to a strictly monogamous mating system (0% polygyny). \label{SS_components}](Figures/Individual_SS_Estimates.pdf)  
-
-![Path analysis of evolutionary and ecological variables. Arrows represent direct effects with the direction of effect corresponding to colours (blue = positive, red = negative). The numeric values are standardised regression slopes and the asterisks indicates that the 95% confidence intervals of this estimate do not overlap with zero. The confidence intervals were obtained from 500 bootstrapped iterations and the data used in this analysis was subset to species with both sexual dichromatism and an index of male-biased sexual selection measures (*n* = 2,465). \label{Path_Analysis}](Figures/Path_Analysis.pdf)  
-
-\newpage\phantomsection
+\phantomsection
 
 # Discussion
 
@@ -290,7 +260,45 @@ All authors contributed to conception, design and approach to analyses; J.G.C. a
 # Data Accessibility
 We have sought to make the data and Supplementary Material (including `R` code) freely accessible to readers. The code and Supplementary Material for this manuscript are available on \href{https://justincally.github.io/SexualSelection_Speciation/}{GitHub} and as an attached HTML document (Supplementary Material) for reviewers. Data is archived in the adjoined GitHub repository and the environmental dataset collated for this manuscript is available on Dryad: https://doi.org/10.5061/dryad.573n5tb6n. 
 
+\phantomsection
+# Conflicts of interest  
+The authors declare no conflicts of interests to declare.
+
 \newpage\phantomsection
 
 # References
 <div id="refs"></div>
+
+```{r lit, echo = FALSE, warning=FALSE}
+options(knitr.kable.NA = ' ')
+
+literature_table %>%
+  select(-Citation) %>%
+  # pandoc.table(style = "rmarkdown", 
+  #              caption = "Review of studies testing the association between sexual selection and speciation")
+  knitr::kable(format = "latex",
+        booktabs = T,
+        escape = T,
+        caption = "Previous studies testing the association between sexual selection and speciation") %>%
+  kableExtra::kable_styling(latex_options = c("HOLD_position", "scale_down"),
+                            full_width = FALSE, 
+                            font_size = 8) %>%
+  kableExtra::column_spec(5, "27em") %>%
+  kableExtra::column_spec(3, "10em") %>%
+  kableExtra::column_spec(4, "3em") %>%
+  kableExtra::collapse_rows(1:2, row_group_label_position = "identity") %>% 
+  kableExtra::footnote(general_title = "", 
+                       general = "Studies were obtained by searching 'Web of Science' for articles published from 2011 for terms containing ‘speciation’, ‘diversification’ and ‘sexual selection’. We summarised all the studies we found relevant and comparable to our study.", threeparttable = TRUE)
+```
+
+\newpage
+
+\renewcommand{\includegraphics}[2][]{}
+
+![Speciation rate ($\lambda_{DR}$) across all passerine birds (*n* = 5,965) with estimates of sexual dichromatism, range size available for 5,812 species and an index of male-biased sexual selection available for 2,465 species. Across these species there was a small but significant negative association between $\lambda_{DR}$ and log-range size as well as a significant positive association between $\lambda_{DR}$ and male-biased sexual selection but no significant association between $\lambda_{DR}$ and sexual dichromatism based on RGB measures. $\lambda_{DR}$ are those from the MCC tree and images of birds are from the _Handbook of the Birds of the World_. Clockwise the six species are: _Sporophila bouvronides_, _Euplectes franciscanus_, _Phainopepla nitens_, _Paradisaea rubra_, _Malurus pulcherrimus_, _Lepidothrix coeruleocapilla_. Edge colours for the terminal branch correspond to $\lambda_{DR}$ but all precluding branches have been generated for graphical purposes using ancestral character state estimation [@phytools_2012] and should not be interpreted. Illustrations reproduced by permission of Lynx Editions. \label{Speciation_Figure}](Figures/DRSpeciationFigure.pdf)  
+
+![Model estimates (a) showing the effect size (i.e. slope) of log-range size and sexual dichromatism on speciation and extinction rates using PGLS analyses with the sexual dichromatism dataset (RGB values, *n* = 5,812). (b) depicts the scatter plot of speciation rate ($\lambda_{DR}$) and log-range size with the model estimate presented as a dashed line. (c) shows the scatter plot of speciation rate ($\lambda_{DR}$) and male-biased sexual selection (*n* = 2,465). Similar to (a), (d) presents model estimates for PGLS analyses using a restricted dataset with measures of an index of male-biased sexual selection (*n* = 2,465) and shows the effect of log-range size and male-biased sexual selection on speciation and extinction rates. Both datasets were used for analyses with three measures of speciation ($\lambda_{DR}$, $\lambda_{ND}$, $\lambda_{BAMM}$) and one measure of extinction ($\mu_{BAMM}$) as response variables. The numerical values for the model estimates using the MCC tree and HPD intervals of estimates from 1,000 randomly sampled trees (for $\lambda_{DR}$ and $\lambda_{ND}$) or 100 randomly sampled trees for $\lambda_{BAMM}$ and $\mu_{BAMM}$ can be found in the Supplementary Information. Density curves are based on model estimates from 1,000/100 trees and the circle below with error bars is the estimate and 95% CIs from the MCC tree. For this figure we removed outliers from estimates coming from the 100 randomly sampled trees for BAMM models in order to be able to visualise the MCC 95% CIs. \label{model_results}](Figures/Estimates_and_scatter_edit.pdf)  
+
+![Estimates of the effect of individual sexual selection components included in the PPCA (paternal care, sexual size dimorphism and mating system) on three measures of speciation rate ($\lambda_{DR}$, $\lambda_{ND}$ and $\lambda_{BAMM}$). Estimates are presented as density intervals from pgls models on 300 phylogentic trees that used species with available data for these sexual selection measures (*n* = 2,465). The bar under each density ridge is the 95 % Highest Posterior Density Interval. Given that the mating system is a categorical variable, model estimates for three polygynous mating system levels are in reference to a strictly monogamous mating system (0% polygyny). \label{SS_components}](Figures/Individual_SS_Estimates.pdf)  
+
+![Path analysis of evolutionary and ecological variables. Arrows represent direct effects with the direction of effect corresponding to colours (blue = positive, red = negative). The numeric values are standardised regression slopes and the asterisks indicates that the 95% confidence intervals of this estimate do not overlap with zero. The confidence intervals were obtained from 500 bootstrapped iterations and the data used in this analysis was subset to species with both sexual dichromatism and an index of male-biased sexual selection measures (*n* = 2,465). \label{Path_Analysis}](Figures/Path_Analysis.pdf)  
